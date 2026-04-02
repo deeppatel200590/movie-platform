@@ -5,7 +5,7 @@ const AdminContact = () => {
 
   // Fetch messages
   useEffect(() => {
-    fetch("http://localhost:5000/api/contact")
+    fetch(`${import.meta.env.VITE_API_URL}/api/contact`)
       .then((res) => res.json())
       .then((data) => setMessages(data))
       .catch((err) => console.log(err));
@@ -16,7 +16,7 @@ const AdminContact = () => {
     if (!window.confirm("Delete this message?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/contact/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/${id}`, {
         method: "DELETE",
       });
 

@@ -15,7 +15,7 @@ const MoviePlayer = () => {
     const fetchMovie = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:5000/api/movies/${id}`
+          `${import.meta.env.VITE_API_URL}/api/movies/${id}`
         );
 
         setMovie(res.data);
@@ -44,7 +44,7 @@ const MoviePlayer = () => {
         const decoded = jwtDecode(token);
 
         const res = await fetch(
-          "http://localhost:5000/api/payment/check",
+          `${import.meta.env.VITE_API_URL}/api/payment/check`,
           {
             method: "POST",
             headers: {
@@ -99,7 +99,7 @@ const MoviePlayer = () => {
     <div className="w-screen h-screen flex items-center justify-center bg-black">
       {movie && (
         <video
-          src={`http://localhost:5000/uploads/${movie.movieUrl}`}
+          src={`${import.meta.env.VITE_API_URL}/uploads/${movie.movieUrl}`}
           controls
           className="w-full h-full object-contain"
         />

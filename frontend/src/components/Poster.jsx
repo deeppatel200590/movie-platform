@@ -6,7 +6,7 @@ const Poster = () => {
   const [movie, setMovie] = useState(null);
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/movies/${id}`)
+    fetch(`${import.meta.env.VITE_API_URL}/api/movies/${id}`)
       .then((res) => res.json())
       .then((data) => setMovie(data));
   }, [id]);

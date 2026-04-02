@@ -8,7 +8,7 @@ const FeachMovie = () => {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch(`http://localhost:5000/api/movies/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/movies/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -30,7 +30,7 @@ const FeachMovie = () => {
   };
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/movies")
+    fetch(`${import.meta.env.VITE_API_URL}/api/movies`)
       .then((res) => res.json())
       .then((data) => setMovies(data))
       .catch((err) => console.log(err));

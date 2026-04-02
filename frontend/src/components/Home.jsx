@@ -22,7 +22,7 @@ const Home = () => {
 
   // FETCH MOVIES
   useEffect(() => {
-    fetch("http://localhost:5000/api/movies")
+    fetch(`${import.meta.env.VITE_API_URL}/api/movies`)
       .then((res) => res.json())
       .then((data) => {
         setMovies(data);
@@ -49,7 +49,7 @@ const Home = () => {
         if (!token) return;
 
         const res = await axios.get(
-          "http://localhost:5000/api/purchase/my",
+          `${import.meta.env.VITE_API_URL}/api/purchase/my`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -71,7 +71,7 @@ const Home = () => {
       const decoded = jwtDecode(token);
 
       const res = await axios.post(
-        "http://localhost:5000/api/payment/success",
+        `${import.meta.env.VITE_API_URL}/api/payment/success`,
         {
           userId: decoded.id,
           movieId: movie._id,
@@ -96,7 +96,7 @@ const Home = () => {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/payment/order",
+        `${import.meta.env.VITE_API_URL}/api/payment/order`,
         {
           amount: Number(movie.price),
         }

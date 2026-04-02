@@ -33,7 +33,7 @@ const Movieupload = () => {
     const token = localStorage.getItem("token"); // ✅ get token
 
     const res = await axios.post(
-      "http://localhost:5000/api/movies/upload",
+      `${import.meta.env.VITE_API_URL}/api/movies/upload`,
       formData,
       {
         headers: {
