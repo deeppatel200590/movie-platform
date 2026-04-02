@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express from "express";
 import connectDB from "./model/connection.js";
 import cors from "cors";
@@ -9,10 +11,14 @@ import Contact from "./model/Contact.js";
 import Purchase from "./model/Purchase.js";
 import Razorpay from "razorpay";
 import crypto from "crypto";
-import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 
-dotenv.config();
+import { cloudinary } from "./model/cloudinary.js";
+
+console.log("ENV CHECK:", {
+  cloud: process.env.CLOUD_NAME,
+  key: process.env.API_KEY,
+});
 
 const app = express();
 
@@ -56,8 +62,8 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-app.post(
-  "/api/movies/upload",
+
+app.post("/api/movies/upload",
   auth,
   adminOnly,
   upload.fields([
@@ -80,10 +86,12 @@ app.post(
         hero: req.body.hero,
         price: Number(req.body.price),
         releaseDate: new Date(req.body.releaseDate),
-        status: status,
+        status,
         producer: req.body.producer,
-        poster: req.files.poster[0].filename,
-        movieUrl: req.files.movie[0].filename
+
+        // ✅ Direct Cloudinary URLs
+        poster: req.files.poster[0].path,
+        movieUrl: req.files.movie[0].path
       });
 
       await newMovie.save();
@@ -94,7 +102,8 @@ app.post(
       });
 
     } catch (error) {
-      res.status(500).json({ message: "Upload failed" });
+      console.log("UPLOAD ERROR:", error);
+      res.status(500).json({ message: error.message });
     }
   }
 );

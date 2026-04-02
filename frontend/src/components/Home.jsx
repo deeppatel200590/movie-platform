@@ -18,10 +18,9 @@ const Home = () => {
 
   const categories = ["All", "Action", "Drama", "Sci-Fi", "Comedy", "Horror"];
 
-  // ✅ Normalize function (FIX)
   const normalize = (str) => str?.toLowerCase().replace(/[\s-]/g, "");
 
-  // Fetch movies
+  // FETCH MOVIES
   useEffect(() => {
     fetch("http://localhost:5000/api/movies")
       .then((res) => res.json())
@@ -36,13 +35,13 @@ const Home = () => {
       });
   }, []);
 
-  // Recent
+  // RECENT
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("recentMovies")) || [];
     setRecentMovies(stored);
   }, []);
 
-  // Purchased
+  // PURCHASED
   useEffect(() => {
     const fetchPurchased = async () => {
       try {
@@ -65,7 +64,7 @@ const Home = () => {
     fetchPurchased();
   }, []);
 
-  // Payment success
+  // PAYMENT SUCCESS
   const handlePaymentSuccess = async (response, movie) => {
     try {
       const token = localStorage.getItem("token");
@@ -90,40 +89,35 @@ const Home = () => {
     }
   };
 
-  // Buy
+  // BUY
   const handleBuy = async (movie) => {
-  const loaded = await loadRazorpay();
-  if (!loaded || !window.Razorpay) return;
+    const loaded = await loadRazorpay();
+    if (!loaded || !window.Razorpay) return;
 
-  try {
-    if (!movie.price || isNaN(movie.price)) {
-      alert("Invalid movie price");
-      return;
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/payment/order",
+        {
+          amount: Number(movie.price),
+        }
+      );
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: res.data.amount,
+        currency: "INR",
+        order_id: res.data.id,
+        handler: (response) => handlePaymentSuccess(response, movie),
+      };
+
+      new window.Razorpay(options).open();
+    } catch (err) {
+      console.error("BUY ERROR:", err.response?.data || err.message);
+      alert(err.response?.data?.message || "Payment failed");
     }
+  };
 
-    const res = await axios.post(
-      "http://localhost:5000/api/payment/order",
-      {
-        amount: Number(movie.price), // ✅ FORCE NUMBER
-      }
-    );
-
-    const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-      amount: res.data.amount,
-      currency: "INR",
-      order_id: res.data.id,
-      handler: (response) => handlePaymentSuccess(response, movie),
-    };
-
-    new window.Razorpay(options).open();
-  } catch (err) {
-    console.error("BUY ERROR:", err.response?.data || err.message);
-    alert(err.response?.data?.message || "Payment failed");
-  }
-};
-
-  // ✅ FINAL FILTER (WORKING)
+  // FILTER
   const filteredMovies = movies.filter((movie) => {
     const matchesSearch = movie.title
       ?.toLowerCase()
@@ -136,7 +130,7 @@ const Home = () => {
     return matchesSearch && matchesCategory;
   });
 
-  // Movie Card
+  // MOVIE CARD
   const MovieCard = ({ movie }) => {
     const isUpcoming = new Date(movie.releaseDate) > new Date();
     const isPurchased = purchasedMovies.includes(movie._id);
@@ -149,13 +143,19 @@ const Home = () => {
           onClick={() => {
             let recent =
               JSON.parse(localStorage.getItem("recentMovies")) || [];
-            recent = [movie, ...recent.filter((m) => m._id !== movie._id)].slice(0, 10);
+
+            recent = [
+              movie,
+              ...recent.filter((m) => m._id !== movie._id),
+            ].slice(0, 10);
+
             localStorage.setItem("recentMovies", JSON.stringify(recent));
           }}
         >
           <div className="aspect-[2/3]">
+            {/* ✅ FIXED HERE (NO /uploads) */}
             <img
-              src={`http://localhost:5000/uploads/${movie.poster}`}
+              src={movie.poster}
               alt={movie.title}
               className="w-full h-full object-cover"
             />
@@ -258,16 +258,11 @@ const Home = () => {
             </h2>
 
             <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar">
-              {recentMovies
-                .filter((movie) =>
-                  activeCategory === "All" ||
-                  normalize(movie.category) === normalize(activeCategory)
-                )
-                .map((movie) => (
-                  <div key={movie._id} className="w-48 shrink-0">
-                    <MovieCard movie={movie} />
-                  </div>
-                ))}
+              {recentMovies.map((movie) => (
+                <div key={movie._id} className="w-48 shrink-0">
+                  <MovieCard movie={movie} />
+                </div>
+              ))}
             </div>
           </section>
         )}
@@ -280,16 +275,11 @@ const Home = () => {
             </h2>
 
             <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar">
-              {upcomingMovies
-                .filter((movie) =>
-                  activeCategory === "All" ||
-                  normalize(movie.category) === normalize(activeCategory)
-                )
-                .map((movie) => (
-                  <div key={movie._id} className="w-48 shrink-0">
-                    <MovieCard movie={movie} />
-                  </div>
-                ))}
+              {upcomingMovies.map((movie) => (
+                <div key={movie._id} className="w-48 shrink-0">
+                  <MovieCard movie={movie} />
+                </div>
+              ))}
             </div>
           </section>
         )}

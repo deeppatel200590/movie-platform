@@ -16,36 +16,30 @@ const Poster = () => {
   return (
     <div className="h-screen bg-black text-white overflow-hidden">
 
-      {/* Image Container */}
-        <Link to={`/movie/${movie._id}`}>
-      <div className="relative w-full h-full">
+      <Link to={`/movie/${movie._id}`}>
+        <div className="relative w-full h-full">
 
-        {/* Poster Image */}
+          {/* 🔥 FIXED IMAGE */}
           <img
-            src={`http://localhost:5000/uploads/${movie.poster}`}
+            src={movie.poster}
             className="w-full h-full object-cover"
-         />
+            alt={movie.title}
+          />
 
-        {/* Dark Overlay (for readability) */}
-        {/* <div className="absolute inset-0 bg-black/60"></div> */}
+          <div className="absolute bottom-0 p-6">
+            <h1 className="text-4xl font-bold">{movie.title}</h1>
 
-        {/* Text Content */}
-        <div className="absolute bottom-0 p-6">
+            <p className="mt-2">Category: {movie.category}</p>
+            <p>Hero: {movie.hero}</p>
+            <p>Producer: {movie.producer}</p>
 
-          <h1 className="text-4xl font-bold">{movie.title}</h1>
-
-          <p className="mt-2">Category: {movie.category}</p>
-          <p>Hero: {movie.hero}</p>
-          <p>Producer: {movie.producer}</p>
-
-          <p className="mt-4 max-w-xl line-clamp-3">
-            {movie.description}
-          </p>
+            <p className="mt-4 max-w-xl line-clamp-3">
+              {movie.description}
+            </p>
+          </div>
 
         </div>
-
-      </div>
-        </Link>
+      </Link>
     </div>
   );
 };
