@@ -1,0 +1,318 @@
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
+import axios from "axios";
+import { loadRazorpay } from "../utils/loadRazorpay";
+import { Search, Play, ShoppingCart, Clock, Flame } from "lucide-react";
+
+const Home = () => {
+  const navigate = useNavigate();
+
+  const [movies, setMovies] = useState([]);
+  const [recentMovies, setRecentMovies] = useState([]);
+  const [upcomingMovies, setUpcomingMovies] = useState([]);
+  const [purchasedMovies, setPurchasedMovies] = useState([]);
+
+  const [search, setSearch] = useState("");
+  const [activeCategory, setActiveCategory] = useState("All");
+
+  const categories = ["All", "Action", "Drama", "Sci-Fi", "Comedy", "Horror"];
+
+  // ✅ Normalize function (FIX)
+  const normalize = (str) => str?.toLowerCase().replace(/[\s-]/g, "");
+
+  // Fetch movies
+  useEffect(() => {
+    fetch("http://localhost:5000/api/movies")
+      .then((res) => res.json())
+      .then((data) => {
+        setMovies(data);
+
+        const now = new Date();
+        const upcoming = data.filter(
+          (movie) => new Date(movie.releaseDate) > now
+        );
+        setUpcomingMovies(upcoming);
+      });
+  }, []);
+
+  // Recent
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("recentMovies")) || [];
+    setRecentMovies(stored);
+  }, []);
+
+  // Purchased
+  useEffect(() => {
+    const fetchPurchased = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const res = await axios.get(
+          "http://localhost:5000/api/purchase/my",
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        setPurchasedMovies(res.data.map((p) => p.movieId));
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchPurchased();
+  }, []);
+
+  // Payment success
+  const handlePaymentSuccess = async (response, movie) => {
+    try {
+      const token = localStorage.getItem("token");
+      const decoded = jwtDecode(token);
+
+      const res = await axios.post(
+        "http://localhost:5000/api/payment/success",
+        {
+          userId: decoded.id,
+          movieId: movie._id,
+          razorpay_order_id: response.razorpay_order_id,
+          razorpay_payment_id: response.razorpay_payment_id,
+          razorpay_signature: response.razorpay_signature,
+        }
+      );
+
+      if (res.data.success) {
+        setPurchasedMovies((prev) => [...prev, movie._id]);
+      }
+    } catch {
+      alert("Error saving purchase");
+    }
+  };
+
+  // Buy
+  const handleBuy = async (movie) => {
+  const loaded = await loadRazorpay();
+  if (!loaded || !window.Razorpay) return;
+
+  try {
+    if (!movie.price || isNaN(movie.price)) {
+      alert("Invalid movie price");
+      return;
+    }
+
+    const res = await axios.post(
+      "http://localhost:5000/api/payment/order",
+      {
+        amount: Number(movie.price), // ✅ FORCE NUMBER
+      }
+    );
+
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: res.data.amount,
+      currency: "INR",
+      order_id: res.data.id,
+      handler: (response) => handlePaymentSuccess(response, movie),
+    };
+
+    new window.Razorpay(options).open();
+  } catch (err) {
+    console.error("BUY ERROR:", err.response?.data || err.message);
+    alert(err.response?.data?.message || "Payment failed");
+  }
+};
+
+  // ✅ FINAL FILTER (WORKING)
+  const filteredMovies = movies.filter((movie) => {
+    const matchesSearch = movie.title
+      ?.toLowerCase()
+      .includes(search.toLowerCase());
+
+    const matchesCategory =
+      activeCategory === "All" ||
+      normalize(movie.category) === normalize(activeCategory);
+
+    return matchesSearch && matchesCategory;
+  });
+
+  // Movie Card
+  const MovieCard = ({ movie }) => {
+    const isUpcoming = new Date(movie.releaseDate) > new Date();
+    const isPurchased = purchasedMovies.includes(movie._id);
+
+    return (
+      <div className="group bg-gray-900 rounded-xl overflow-hidden shadow-lg hover:scale-105 transition">
+
+        <Link
+          to={`/poster/${movie._id}`}
+          onClick={() => {
+            let recent =
+              JSON.parse(localStorage.getItem("recentMovies")) || [];
+            recent = [movie, ...recent.filter((m) => m._id !== movie._id)].slice(0, 10);
+            localStorage.setItem("recentMovies", JSON.stringify(recent));
+          }}
+        >
+          <div className="aspect-[2/3]">
+            <img
+              src={`http://localhost:5000/uploads/${movie.poster}`}
+              alt={movie.title}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </Link>
+
+        <div className="p-3">
+          <p className="text-xs text-blue-400 font-bold uppercase">
+            {movie.category}
+          </p>
+
+          <h3 className="text-white font-semibold truncate">
+            {movie.title}
+          </h3>
+
+          <p className="text-green-400 font-bold mt-1">
+            ₹{movie.price}
+          </p>
+
+          <div className="mt-3">
+            {isUpcoming ? (
+              <button className="w-full py-2 bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 text-sm">
+                <Clock size={16} /> Coming Soon
+              </button>
+            ) : isPurchased ? (
+              <button
+                onClick={() => navigate(`/movie/${movie._id}`)}
+                className="w-full py-2 bg-blue-600 text-white rounded-lg flex items-center justify-center gap-2 text-sm"
+              >
+                <Play size={16} /> Watch
+              </button>
+            ) : (
+              <button
+                onClick={() => handleBuy(movie)}
+                className="w-full py-2 bg-white text-black rounded-lg flex items-center justify-center gap-2 text-sm font-bold"
+              >
+                <ShoppingCart size={16} /> Buy
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="bg-[#0f1115] min-h-screen text-gray-100 pb-20">
+
+      {/* HERO */}
+      <div className="relative h-[60vh] flex items-end px-6 md:px-12 pb-12 mb-8">
+        <div className="absolute inset-0">
+          <img
+            src="https://images.unsplash.com/photo-1626814026160-2237a95fc5a0"
+            className="w-full h-full object-cover opacity-40"
+          />
+        </div>
+
+        <div className="relative z-10">
+          <h1 className="text-4xl md:text-6xl font-black mb-4">
+            UNLIMITED <span className="text-blue-500">CINEMA</span>
+          </h1>
+
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+            <input
+              type="text"
+              placeholder="Search movies..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-gray-900 border border-gray-700 py-3 pl-10 rounded-xl"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* CATEGORY */}
+      <div className="px-6 md:px-12 mb-6 flex gap-3 overflow-x-auto no-scrollbar">
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => setActiveCategory(cat)}
+            className={`px-5 py-2 rounded-full text-sm font-bold ${
+              activeCategory === cat
+                ? "bg-blue-600 text-white"
+                : "bg-gray-800 text-gray-400"
+            }`}
+          >
+            {cat}
+          </button>
+        ))}
+      </div>
+
+      <div className="px-6 md:px-12 space-y-12">
+
+        {/* RECENT */}
+        {!search && recentMovies.length > 0 && (
+          <section>
+            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+              <Flame className="text-orange-500" /> Continue Watching
+            </h2>
+
+            <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar">
+              {recentMovies
+                .filter((movie) =>
+                  activeCategory === "All" ||
+                  normalize(movie.category) === normalize(activeCategory)
+                )
+                .map((movie) => (
+                  <div key={movie._id} className="w-48 shrink-0">
+                    <MovieCard movie={movie} />
+                  </div>
+                ))}
+            </div>
+          </section>
+        )}
+
+        {/* UPCOMING */}
+        {!search && upcomingMovies.length > 0 && (
+          <section>
+            <h2 className="text-2xl font-bold mb-4">
+              Upcoming Movies
+            </h2>
+
+            <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar">
+              {upcomingMovies
+                .filter((movie) =>
+                  activeCategory === "All" ||
+                  normalize(movie.category) === normalize(activeCategory)
+                )
+                .map((movie) => (
+                  <div key={movie._id} className="w-48 shrink-0">
+                    <MovieCard movie={movie} />
+                  </div>
+                ))}
+            </div>
+          </section>
+        )}
+
+        {/* GRID */}
+        <section>
+          <h2 className="text-2xl font-bold mb-6">
+            {search ? "Search Results" : "All Movies"}
+          </h2>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+            {filteredMovies.map((movie) => (
+              <MovieCard key={movie._id} movie={movie} />
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <style>{`
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+      `}</style>
+    </div>
+  );
+};
+
+export default Home;
