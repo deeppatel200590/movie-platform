@@ -1,8 +1,6 @@
-const passport = require("passport");
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
-
-// import your User model
-const User = require("./User");
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import User from "./Signup.js"; // ✅ correct path
 
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
@@ -11,20 +9,21 @@ passport.use(new GoogleStrategy({
 },
 async (accessToken, refreshToken, profile, done) => {
   try {
-    // check if user exists
-    let user = await User.findOne({ googleId: profile.id });
+    let user = await User.findOne({ email: profile.emails[0].value });
 
     if (!user) {
-      // create new user
       user = new User({
         googleId: profile.id,
         name: profile.displayName,
         email: profile.emails[0].value
       });
-      await user.save();
+    } else {
+      user.googleId = profile.id; // link account
     }
 
+    await user.save();
     return done(null, user);
+
   } catch (err) {
     return done(err, null);
   }

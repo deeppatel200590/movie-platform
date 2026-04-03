@@ -38,13 +38,16 @@ const Signup = () => {
 
         {/* LOGO */}
         <img 
-            src={logo} 
-            alt="Vernya Logo" 
-            className="w-32 mx-auto mb-6"
+          src={logo} 
+          alt="Logo" 
+          className="w-32 mx-auto mb-6"
         />
 
-        <h2 className="text-white text-xl mb-4 text-center">Create Account</h2>
+        <h2 className="text-white text-xl mb-4 text-center">
+          Create Account
+        </h2>
 
+        {/* NORMAL SIGNUP */}
         <form onSubmit={handleSubmit}>
           <input
             type="text"
@@ -64,11 +67,10 @@ const Signup = () => {
             required
           />
 
-        
           <input
             type="password"
             name="password"
-            placeholder="🔑 Password "
+            placeholder="🔑 Password"
             className="w-full p-2 mb-4 rounded bg-gray-500 text-white"
             onChange={handleChange}
             required
@@ -82,11 +84,26 @@ const Signup = () => {
           </button>
         </form>
 
+        {/* DIVIDER */}
+        <div className="flex items-center my-4">
+          <hr className="flex-grow border-gray-600" />
+          <span className="mx-2 text-gray-400 text-sm">OR</span>
+          <hr className="flex-grow border-gray-600" />
+        </div>
+
+        {/* GOOGLE SIGNUP */}
+        <a href={`${import.meta.env.VITE_API_URL}/auth/google`}>
+          <div className="w-full bg-white text-black p-2 rounded text-center cursor-pointer hover:bg-gray-200 transition">
+            Sign up with Google
+          </div>
+        </a>
+
+        {/* LOGIN LINK */}
         <p className="text-gray-400 text-sm text-center mt-4">
           Already have an account?{" "}
           <Link 
-            to="/" 
-            className="text-indigo-400 hover:underline cursor-pointer"
+            to="/login" 
+            className="text-indigo-400 hover:underline"
           >
             Login
           </Link>

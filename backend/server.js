@@ -12,7 +12,7 @@ import Purchase from "./model/Purchase.js";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import passport from "./config/passport.js";
+import passport from "./model/passport.js";
 import session from "express-session";
 
 import { cloudinary } from "./model/cloudinary.js";
@@ -33,6 +33,15 @@ app.use(cors());
 app.use(express.json());
 
 connectDB();
+
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id, done) => {
+  const user = await User.findById(id);
+  done(null, user);
+});
 
 
 const auth = (req, res, next) => {
