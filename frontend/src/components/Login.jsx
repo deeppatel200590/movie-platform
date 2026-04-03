@@ -80,6 +80,11 @@ const Login = () => {
           <button className="w-full bg-red-600 text-white p-2 rounded">
             Login
           </button>
+          <a href={`${import.meta.env.VITE_API_URL}/auth/google`}>
+            <div className="w-full bg-white text-black p-2 rounded text-center cursor-pointer">
+              Login with Google
+            </div>
+          </a>
         </form>
 
         <p className="text-gray-400 text-sm text-center mt-4">

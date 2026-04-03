@@ -12,15 +12,21 @@ import Purchase from "./model/Purchase.js";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
+const passport = require("./config/passport");
+const session = require("express-session");
 
 import { cloudinary } from "./model/cloudinary.js";
-
-console.log("ENV CHECK:", {
-  cloud: process.env.CLOUD_NAME,
-  key: process.env.API_KEY,
-});
-
 const app = express();
+
+app.use(session({
+  secret: "secretkey",
+  resave: false,
+  saveUninitialized: true
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
 
 app.use("/uploads", express.static("uploads"));
 app.use(cors());
@@ -324,6 +330,28 @@ app.get("/api/purchase/my", auth, async (req, res) => {
     res.status(500).json({ message: "Error fetching purchases" });
   }
 });
+
+
+
+app.get("/auth/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+app.get("/auth/google/callback",
+  passport.authenticate("google", { failureRedirect: "/login" }),
+  (req, res) => {
+
+    // create JWT token
+    const token = jwt.sign(
+      { id: req.user._id, role: req.user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // redirect with token
+    res.redirect(`https://movie-platform-xi.vercel.app/social-login?token=${token}`);
+  }
+);
 
 app.listen(5000, () => {
   console.log("Server running on port 5000");

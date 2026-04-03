@@ -8,7 +8,7 @@ import About from "./components/About";
 import ContactUs from "./components/ContactUs";
 import MoviePlayer from "./components/MoviePlayer";
 import Poster from "./components/Poster";
-
+import SocialLogin from "./components/SocialLogin";
 import Admin from "./components/Admin";
 import AdminContact from "./components/AdminContact";
 import Movieupload from "./components/Movieupload";
@@ -27,7 +27,7 @@ const App = () => {
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
-
+      <Route path="/social-login" element={<SocialLogin />} />
       {/* USER ROUTES */}
       <Route
         path="/home"
