@@ -12,8 +12,8 @@ import Purchase from "./model/Purchase.js";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
-const passport = require("./config/passport");
-const session = require("express-session");
+import passport from "./config/passport.js";
+import session from "express-session";
 
 import { cloudinary } from "./model/cloudinary.js";
 const app = express();
