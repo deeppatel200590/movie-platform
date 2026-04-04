@@ -3,7 +3,6 @@ dotenv.config();
 import express from "express";
 import connectDB from "./model/connection.js";
 import cors from "cors";
-import upload from "./model/multer.js";
 import Movie from "./model/Movie.js";
 import bcrypt from "bcrypt";
 import User from "./model/Signup.js";
@@ -81,12 +80,9 @@ const razorpay = new Razorpay({
 app.post("/api/movies/upload",
   auth,
   adminOnly,
-  upload.fields([
-    { name: "poster", maxCount: 1 },
-    { name: "movie", maxCount: 1 }
-  ]),
   async (req, res) => {
     try {
+
       const now = new Date();
       let status = "coming";
 
@@ -104,15 +100,15 @@ app.post("/api/movies/upload",
         status,
         producer: req.body.producer,
 
-        // ✅ Direct Cloudinary URLs
-        poster: req.files.poster[0].path,
-        movieUrl: req.files.movie[0].path
+        // ✅ Correct (coming from frontend)
+        poster: req.body.poster,
+        movieUrl: req.body.movieUrl
       });
 
       await newMovie.save();
 
       res.json({
-        message: "Upload successful",
+        message: "Movie saved successfully",
         movie: newMovie
       });
 

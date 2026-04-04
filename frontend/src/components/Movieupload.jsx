@@ -16,42 +16,93 @@ const Movieupload = () => {
   const [releaseDate, setReleaseDate] = useState("");
   const [price, setPrice] = useState("");
 
-    const handleUpload = async () => {
-  const formData = new FormData();
+  const [progress, setProgress] = useState(0);
+  const [uploading, setUploading] = useState(false);
 
-  formData.append("title", title);
-  formData.append("category", category);
-  formData.append("poster", poster);
-  formData.append("movie", movie);
-  formData.append("description", description);
-  formData.append("hero", hero);
-  formData.append("producer", producer);
-  formData.append("releaseDate", releaseDate);
-  formData.append("price", price);
+  const CLOUD_NAME = import.meta.env.VITE_CLOUD_NAME; // 🔥 change this
+  const UPLOAD_PRESET = import.meta.env.VITE_UPLOAD_PRESET; // 🔥 change this
 
-  try {
-    const token = localStorage.getItem("token"); // ✅ get token
+  const handleUpload = async () => {
 
-    const res = await axios.post(
-      `${import.meta.env.VITE_API_URL}/api/movies/upload`,
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`, // ✅ VERY IMPORTANT
-          "Content-Type": "multipart/form-data"
+    if (!movie || !poster) {
+      alert("Please select movie and poster");
+      return;
+    }
+
+    try {
+      setUploading(true);
+      setProgress(0);
+
+      // 🔥 1. Upload Poster
+      const posterData = new FormData();
+      posterData.append("file", poster);
+      posterData.append("upload_preset", UPLOAD_PRESET);
+
+      const posterRes = await axios.post(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+        posterData
+      );
+
+      const posterUrl = posterRes.data.secure_url;
+
+      // 🔥 2. Upload Movie (with progress)
+      const movieData = new FormData();
+      movieData.append("file", movie);
+      movieData.append("upload_preset", UPLOAD_PRESET);
+
+      const movieRes = await axios.post(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`,
+        movieData,
+        {
+          onUploadProgress: (progressEvent) => {
+            if (progressEvent.total) {
+              const percent = Math.round(
+                (progressEvent.loaded * 100) / progressEvent.total
+              );
+              setProgress(percent);
+            }
+          }
         }
-      }
-    );
+      );
 
-    console.log(res.data);
-    alert("Movie Uploaded Successfully");
-    navigate("/admin");
+      const movieUrl = movieRes.data.secure_url;
 
-  } catch (error) {
-    console.log(error.response?.data); // ✅ shows real error
-    alert("Upload Failed");
-  }
-};
+      // 🔥 3. Send URLs to backend
+      const token = localStorage.getItem("token");
+
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/movies/upload`,
+        {
+          title,
+          category,
+          poster: posterUrl,
+          movieUrl: movieUrl, // ✅ IMPORTANT
+          description,
+          hero,
+          producer,
+          releaseDate,
+          price
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      alert("Movie Uploaded Successfully");
+
+      setProgress(0);
+      setUploading(false);
+
+      navigate("/admin");
+
+    } catch (error) {
+      console.log(error);
+      alert("Upload Failed");
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-800 flex items-center justify-center mt-15">
@@ -90,7 +141,6 @@ const Movieupload = () => {
 
         <input
           type="datetime-local"
-          placeholder="Hero"
           className="w-full p-2 mb-4 bg-gray-800 rounded"
           onChange={(e)=>setReleaseDate(e.target.value)}
         />
@@ -107,13 +157,12 @@ const Movieupload = () => {
           placeholder="Producer"
           className="w-full p-2 mb-4 bg-gray-800 rounded"
           onChange={(e)=>setProducer(e.target.value)}
-          />
+        />
 
         <p className="mb-1">Upload Poster</p>
         <input
           type="file"
           className="mb-4"
-          required
           onChange={(e)=>setPoster(e.target.files[0])}
         />
 
@@ -121,15 +170,29 @@ const Movieupload = () => {
         <input
           type="file"
           className="mb-4"
-          required
           onChange={(e)=>setMovie(e.target.files[0])}
         />
 
+        {/* ✅ Progress Bar */}
+        {uploading && (
+          <div className="w-full bg-gray-700 rounded mb-4">
+            <div
+              className="bg-green-500 text-xs text-white text-center p-1 rounded"
+              style={{ width: `${progress}%` }}
+            >
+              {progress}%
+            </div>
+          </div>
+        )}
+
         <button
           onClick={handleUpload}
-          className="w-full bg-blue-600 p-2 rounded"
+          disabled={uploading}
+          className={`w-full p-2 rounded ${
+            uploading ? "bg-gray-500" : "bg-blue-600"
+          }`}
         >
-          Upload Movie
+          {uploading ? "Uploading..." : "Upload Movie"}
         </button>
 
       </div>
