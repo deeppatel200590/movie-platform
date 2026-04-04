@@ -3,6 +3,7 @@ dotenv.config();
 import express from "express";
 import connectDB from "./model/connection.js";
 import cors from "cors";
+import upload from "./model/multer.js";
 import Movie from "./model/Movie.js";
 import bcrypt from "bcrypt";
 import User from "./model/Signup.js";
@@ -17,14 +18,6 @@ import session from "express-session";
 import { cloudinary } from "./model/cloudinary.js";
 const app = express();
 
-app.use(cors({
-  origin: "*",
-  credentials: true
-}));
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
 app.use(session({
   secret: "secretkey",
   resave: false,
@@ -34,7 +27,11 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+
 app.use("/uploads", express.static("uploads"));
+app.use(cors());
+app.use(express.json());
+
 connectDB();
 
 passport.serializeUser((user, done) => {
@@ -83,12 +80,6 @@ const razorpay = new Razorpay({
 
 app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
   try {
-    console.log("UPLOAD BODY:", req.body);
-
-    if (!req.body) {
-      return res.status(400).json({ message: "Body missing" });
-    }
-
     const {
       title,
       category,
@@ -98,16 +89,13 @@ app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
       releaseDate,
       producer,
       poster,
-      movie
+      movieUrl
     } = req.body;
 
-    // 🔥 SAFE FIX (NO CRASH EVER)
-    if (!poster?.url || !poster?.publicId) {
-      return res.status(400).json({ message: "Poster missing" });
-    }
-
-    if (!movie?.url || !movie?.publicId) {
-      return res.status(400).json({ message: "Movie missing" });
+    if (!poster || !movieUrl) {
+      return res.status(400).json({
+        message: "Missing poster or movieUrl"
+      });
     }
 
     const newMovie = new Movie({
@@ -116,23 +104,18 @@ app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
       description,
       hero,
       producer,
-      price: Number(price) || 0,
+      price: Number(price),
       releaseDate,
-
-      poster: {
-        url: poster.url,
-        publicId: poster.publicId
-      },
-
-      movie: {
-        url: movie.url,
-        publicId: movie.publicId
-      }
+      poster,
+      movieUrl
     });
 
     await newMovie.save();
 
-    res.json({ success: true, movie: newMovie });
+    res.json({
+      success: true,
+      movie: newMovie
+    });
 
   } catch (error) {
     console.log("UPLOAD ERROR:", error);
@@ -145,34 +128,9 @@ app.get("/api/movies", async (req, res) => {
   res.json(movies);
 });
 
-app.delete("/api/movies/:id", auth, adminOnly, async (req, res) => {
-  try {
-    const movie = await Movie.findById(req.params.id);
-
-    if (!movie) {
-      return res.status(404).json({ message: "Movie not found" });
-    }
-
-    // delete poster
-    if (movie.poster?.publicId) {
-      await cloudinary.uploader.destroy(movie.poster.publicId);
-    }
-
-    // delete video
-    if (movie.movie?.publicId) {
-      await cloudinary.uploader.destroy(movie.movie.publicId, {
-        resource_type: "video"
-      });
-    }
-
-    await Movie.findByIdAndDelete(req.params.id);
-
-    res.json({ success: true, message: "Movie deleted successfully" });
-
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ success: false });
-  }
+app.get("/api/movies/:id", async (req, res) => {
+  const movie = await Movie.findById(req.params.id);
+  res.json(movie);
 });
 
 app.post("/api/signup", async (req, res) => {

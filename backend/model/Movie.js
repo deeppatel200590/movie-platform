@@ -15,15 +15,8 @@ const movieSchema = new mongoose.Schema({
   hero: String,
   producer: String,
 
-  poster: {
-    url: { type: String, required: true },
-    publicId: { type: String, required: true }
-  },
-
-  movie: {
-    url: { type: String, required: true },
-    publicId: { type: String, required: true }
-  },
+  poster: String,
+  movieUrl: String,
 
   releaseDate: Date,
 
