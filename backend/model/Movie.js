@@ -13,18 +13,26 @@ const movieSchema = new mongoose.Schema({
 
   description: String,
   hero: String,
-  producer: String,   
+  producer: String,
 
-  poster: String,
+  poster: {
+    url: { type: String, required: true },
+    publicId: { type: String, required: true }
+  },
 
-  movieUrl: String,
+  movie: {
+    url: { type: String, required: true },
+    publicId: { type: String, required: true }
+  },
+
   releaseDate: Date,
 
-  price:{
+  price: {
     type: Number,
     required: true,
     default: 0
   },
+
   purchaseCount: {
     type: Number,
     default: 0
