@@ -16,42 +16,59 @@ const Movieupload = () => {
   const [releaseDate, setReleaseDate] = useState("");
   const [price, setPrice] = useState("");
 
-    const handleUpload = async () => {
-  const formData = new FormData();
+  // ✅ FIX: normalize datetime-local → full ISO string
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "";
 
-  formData.append("title", title);
-  formData.append("category", category);
-  formData.append("poster", poster);
-  formData.append("movie", movie);
-  formData.append("description", description);
-  formData.append("hero", hero);
-  formData.append("producer", producer);
-  formData.append("releaseDate", releaseDate);
-  formData.append("price", price);
+    const date = new Date(dateStr);
 
-  try {
-    const token = localStorage.getItem("token"); // ✅ get token
+    console.log("📅 RAW INPUT:", dateStr);
+    console.log("📅 CONVERTED ISO:", date.toISOString());
 
-    const res = await axios.post(
-      `${import.meta.env.VITE_API_URL}/api/movies/upload`,
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`, // ✅ VERY IMPORTANT
-          "Content-Type": "multipart/form-data"
+    return date.toISOString();
+  };
+
+  const handleUpload = async () => {
+    const formData = new FormData();
+
+    const fixedDate = formatDate(releaseDate);
+
+    formData.append("title", title);
+    formData.append("category", category);
+    formData.append("poster", poster);
+    formData.append("movie", movie);
+    formData.append("description", description);
+    formData.append("hero", hero);
+    formData.append("producer", producer);
+
+    // 🔥 IMPORTANT FIX HERE
+    formData.append("releaseDate", fixedDate);
+
+    formData.append("price", price);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await axios.post(
+        `${import.meta.env.VITE_API_URL}/api/movies/upload`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data"
+          }
         }
-      }
-    );
+      );
 
-    console.log(res.data);
-    alert("Movie Uploaded Successfully");
-    navigate("/admin");
+      console.log("✅ UPLOAD SUCCESS:", res.data);
+      alert("Movie Uploaded Successfully");
+      navigate("/admin");
 
-  } catch (error) {
-    console.log(error.response?.data); // ✅ shows real error
-    alert("Upload Failed");
-  }
-};
+    } catch (error) {
+      console.log("❌ UPLOAD ERROR:", error.response?.data);
+      alert("Upload Failed");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-800 flex items-center justify-center mt-15">
@@ -90,7 +107,6 @@ const Movieupload = () => {
 
         <input
           type="datetime-local"
-          placeholder="Hero"
           className="w-full p-2 mb-4 bg-gray-800 rounded"
           onChange={(e)=>setReleaseDate(e.target.value)}
         />
@@ -107,13 +123,12 @@ const Movieupload = () => {
           placeholder="Producer"
           className="w-full p-2 mb-4 bg-gray-800 rounded"
           onChange={(e)=>setProducer(e.target.value)}
-          />
+        />
 
         <p className="mb-1">Upload Poster</p>
         <input
           type="file"
           className="mb-4"
-          required
           onChange={(e)=>setPoster(e.target.files[0])}
         />
 
@@ -121,7 +136,6 @@ const Movieupload = () => {
         <input
           type="file"
           className="mb-4"
-          required
           onChange={(e)=>setMovie(e.target.files[0])}
         />
 

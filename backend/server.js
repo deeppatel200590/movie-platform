@@ -48,19 +48,22 @@ const auth = (req, res, next) => {
   try {
     const header = req.headers.authorization;
 
-    if (!header) {
+    if (!header || !header.startsWith("Bearer ")) {
       return res.status(401).json({ message: "No token" });
     }
 
-    const token = header.split(" ")[1]; // ✅ FIX
+    const token = header.split(" ")[1];
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    req.user = decoded;
+    if (!decoded) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
 
+    req.user = decoded;
     next();
 
-  } catch {
+  } catch (err) {
     return res.status(401).json({ message: "Invalid token" });
   }
 };
@@ -88,9 +91,11 @@ app.post("/api/movies/upload",
   async (req, res) => {
     try {
       const now = new Date();
+      const releaseDate = new Date(req.body.releaseDate);
+
       let status = "coming";
 
-      if (new Date(req.body.releaseDate) <= now) {
+      if (!isNaN(releaseDate.getTime()) && releaseDate <= new Date()) {
         status = "released";
       }
 

@@ -21,16 +21,19 @@ const Home = () => {
   const normalize = (str) =>
     str?.toLowerCase().replace(/[\s-]/g, "");
 
-  // ✅ FINAL FIX: UTC SAFE DATE (IMPORTANT)
-  const getUTCDate = (date) => {
-    if (!date) return null;
-    const d = new Date(date);
-    return Date.UTC(
-      d.getUTCFullYear(),
-      d.getUTCMonth(),
-      d.getUTCDate()
-    );
-  };
+  // ✅ FIXED SAFE DATE LOGIC
+const isUpcomingMovie = (movie) => {
+  if (!movie) return false;
+
+  const releaseDate = movie.releaseDate || movie.release_date;
+
+  if (!releaseDate) return false;
+
+  const releaseTime = new Date(releaseDate).getTime();
+  if (isNaN(releaseTime)) return false;
+
+  return movie.status === "coming" || releaseTime > Date.now();
+};
 
   // FETCH MOVIES
   useEffect(() => {
@@ -39,15 +42,13 @@ const Home = () => {
       .then((data) => {
         setMovies(data);
 
-        const todayUTC = getUTCDate(new Date());
-
-        const upcoming = data.filter((movie) => {
-          const releaseUTC = getUTCDate(movie.releaseDate);
-          return releaseUTC && releaseUTC > todayUTC;
-        });
+        const upcoming = data.filter((movie) =>
+          isUpcomingMovie(movie)
+        );
 
         setUpcomingMovies(upcoming);
-      });
+      })
+      .catch((err) => console.error(err));
   }, []);
 
   // RECENT
@@ -148,10 +149,7 @@ const Home = () => {
 
   // MOVIE CARD
   const MovieCard = ({ movie }) => {
-    const todayUTC = getUTCDate(new Date());
-    const releaseUTC = getUTCDate(movie.releaseDate);
-
-    const isUpcoming = releaseUTC && releaseUTC > todayUTC;
+    const isUpcoming = isUpcomingMovie(movie);
     const isPurchased = purchasedMovies.includes(movie._id);
 
     return (
@@ -270,6 +268,23 @@ const Home = () => {
       </div>
 
       <div className="px-6 md:px-12 space-y-12">
+
+        {/* RECENT */}
+        {!search && recentMovies.length > 0 && (
+          <section>
+            <h2 className="text-2xl font-bold mb-4 text-black flex items-center gap-2">
+              <Flame className="text-orange-500" /> Continue Watching
+            </h2>
+
+            <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar">
+              {recentMovies.map((movie) => (
+                <div key={movie._id} className="w-48 shrink-0">
+                  <MovieCard movie={movie} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* UPCOMING */}
         {!search && upcomingMovies.length > 0 && (
