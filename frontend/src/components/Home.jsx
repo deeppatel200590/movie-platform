@@ -267,7 +267,7 @@ const Home = () => {
         {/* RECENT */}
         {!search && recentMovies.length > 0 && (
           <section>
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <h2 className="text-2xl font-bold mb-4 text-black flex items-center gap-2">
               <Flame className="text-orange-500" /> Continue Watching
             </h2>
 
