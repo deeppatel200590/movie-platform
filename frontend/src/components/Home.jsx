@@ -18,13 +18,18 @@ const Home = () => {
 
   const categories = ["All", "Action", "Drama", "Sci-Fi", "Comedy", "Horror"];
 
-  const normalize = (str) => str?.toLowerCase().replace(/[\s-]/g, "");
+  const normalize = (str) =>
+    str?.toLowerCase().replace(/[\s-]/g, "");
 
-  // ✅ FIX: normalize date (removes timezone + time issue)
-  const normalizeDate = (date) => {
+  // ✅ FINAL FIX: UTC SAFE DATE (IMPORTANT)
+  const getUTCDate = (date) => {
+    if (!date) return null;
     const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    return d;
+    return Date.UTC(
+      d.getUTCFullYear(),
+      d.getUTCMonth(),
+      d.getUTCDate()
+    );
   };
 
   // FETCH MOVIES
@@ -34,12 +39,12 @@ const Home = () => {
       .then((data) => {
         setMovies(data);
 
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const todayUTC = getUTCDate(new Date());
 
-        const upcoming = data.filter(
-          (movie) => normalizeDate(movie.releaseDate) > today
-        );
+        const upcoming = data.filter((movie) => {
+          const releaseUTC = getUTCDate(movie.releaseDate);
+          return releaseUTC && releaseUTC > todayUTC;
+        });
 
         setUpcomingMovies(upcoming);
       });
@@ -117,13 +122,14 @@ const Home = () => {
         amount: res.data.amount,
         currency: "INR",
         order_id: res.data.id,
-        handler: (response) => handlePaymentSuccess(response, movie),
+        handler: (response) =>
+          handlePaymentSuccess(response, movie),
       };
 
       new window.Razorpay(options).open();
     } catch (err) {
-      console.error("BUY ERROR:", err.response?.data || err.message);
-      alert(err.response?.data?.message || "Payment failed");
+      console.error(err);
+      alert("Payment failed");
     }
   };
 
@@ -142,12 +148,10 @@ const Home = () => {
 
   // MOVIE CARD
   const MovieCard = ({ movie }) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayUTC = getUTCDate(new Date());
+    const releaseUTC = getUTCDate(movie.releaseDate);
 
-    const releaseDate = normalizeDate(movie.releaseDate);
-    const isUpcoming = releaseDate > today;
-
+    const isUpcoming = releaseUTC && releaseUTC > todayUTC;
     const isPurchased = purchasedMovies.includes(movie._id);
 
     return (
@@ -164,7 +168,10 @@ const Home = () => {
               ...recent.filter((m) => m._id !== movie._id),
             ].slice(0, 10);
 
-            localStorage.setItem("recentMovies", JSON.stringify(recent));
+            localStorage.setItem(
+              "recentMovies",
+              JSON.stringify(recent)
+            );
           }}
         >
           <div className="aspect-[2/3]">
@@ -263,23 +270,6 @@ const Home = () => {
       </div>
 
       <div className="px-6 md:px-12 space-y-12">
-
-        {/* RECENT */}
-        {!search && recentMovies.length > 0 && (
-          <section>
-            <h2 className="text-2xl font-bold mb-4 text-black flex items-center gap-2">
-              <Flame className="text-orange-500" /> Continue Watching
-            </h2>
-
-            <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar">
-              {recentMovies.map((movie) => (
-                <div key={movie._id} className="w-48 shrink-0">
-                  <MovieCard movie={movie} />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
 
         {/* UPCOMING */}
         {!search && upcomingMovies.length > 0 && (
