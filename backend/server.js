@@ -91,38 +91,56 @@ app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
       releaseDate,
       producer,
       poster,
-      movieUrl,
-      posterPublicId,
-      moviePublicId
+      movie
     } = req.body;
+
+    // 🔥 DEBUG (VERY IMPORTANT on Render)
+    console.log("UPLOAD BODY:", req.body);
+
+    // 🔥 VALIDATION
+    if (
+      !title ||
+      !category ||
+      !poster?.url ||
+      !poster?.publicId ||
+      !movie?.url ||
+      !movie?.publicId
+    ) {
+      return res.status(400).json({
+        message: "Missing required fields"
+      });
+    }
 
     const newMovie = new Movie({
       title,
       category,
       description,
       hero,
+      producer,
       price: Number(price) || 0,
       releaseDate,
-      producer,
       status: "coming",
 
       poster: {
-        url: poster,
-        publicId: posterPublicId
+        url: poster.url,
+        publicId: poster.publicId
       },
 
       movie: {
-        url: movieUrl,
-        publicId: moviePublicId
+        url: movie.url,
+        publicId: movie.publicId
       }
     });
 
     await newMovie.save();
 
-    res.json({ message: "Movie saved successfully", movie: newMovie });
+    res.json({
+      message: "Movie saved successfully",
+      movie: newMovie
+    });
 
   } catch (error) {
-    console.log("UPLOAD ERROR:", error);
+    console.log("🔥 UPLOAD ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 });
