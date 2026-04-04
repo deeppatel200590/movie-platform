@@ -17,6 +17,9 @@ import session from "express-session";
 import { cloudinary } from "./model/cloudinary.js";
 const app = express();
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use(session({
   secret: "secretkey",
   resave: false,
@@ -79,7 +82,6 @@ const razorpay = new Razorpay({
 
 app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
   try {
-
     console.log("BODY:", req.body); // 🔥 ADD THIS
 
     const now = new Date();
@@ -98,8 +100,8 @@ app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
       releaseDate: req.body.releaseDate ? new Date(req.body.releaseDate) : null,
       status,
       producer: req.body.producer || "",
-      poster: req.body.poster || "",
-      movieUrl: req.body.movieUrl || ""
+      poster: req.body?.poster || "",
+      movieUrl: req.body?.movieUrl || ""
     });
 
     await newMovie.save();
