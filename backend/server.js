@@ -17,6 +17,11 @@ import session from "express-session";
 import { cloudinary } from "./model/cloudinary.js";
 const app = express();
 
+app.use(cors({
+  origin: "*",
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -29,11 +34,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-
 app.use("/uploads", express.static("uploads"));
-app.use(cors());
-app.use(express.json());
-
 connectDB();
 
 passport.serializeUser((user, done) => {
@@ -82,6 +83,16 @@ const razorpay = new Razorpay({
 
 app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
   try {
+
+    console.log("UPLOAD BODY:", req.body);
+
+    // 🔥 FIX: prevent crash
+    if (!req.body) {
+      return res.status(400).json({
+        message: "req.body is undefined (middleware issue)"
+      });
+    }
+
     const {
       title,
       category,
@@ -94,20 +105,10 @@ app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
       movie
     } = req.body;
 
-    // 🔥 DEBUG (VERY IMPORTANT on Render)
-    console.log("UPLOAD BODY:", req.body);
-
-    // 🔥 VALIDATION
-    if (
-      !title ||
-      !category ||
-      !poster?.url ||
-      !poster?.publicId ||
-      !movie?.url ||
-      !movie?.publicId
-    ) {
+    // 🔥 SAFE CHECK (IMPORTANT)
+    if (!poster || !movie) {
       return res.status(400).json({
-        message: "Missing required fields"
+        message: "Poster or Movie missing"
       });
     }
 
@@ -119,7 +120,6 @@ app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
       producer,
       price: Number(price) || 0,
       releaseDate,
-      status: "coming",
 
       poster: {
         url: poster.url,
@@ -135,12 +135,12 @@ app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
     await newMovie.save();
 
     res.json({
-      message: "Movie saved successfully",
+      success: true,
       movie: newMovie
     });
 
   } catch (error) {
-    console.log("🔥 UPLOAD ERROR:", error);
+    console.log("UPLOAD ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 });
