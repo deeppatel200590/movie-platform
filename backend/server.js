@@ -78,50 +78,50 @@ const razorpay = new Razorpay({
 });
 
 
-app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
-  try {
-    const {
-      title,
-      category,
-      description,
-      hero,
-      price,
-      releaseDate,
-      producer,
-      poster,
-      movieUrl
-    } = req.body;
+app.post("/api/movies/upload",
+  auth,
+  adminOnly,
+  upload.fields([
+    { name: "poster", maxCount: 1 },
+    { name: "movie", maxCount: 1 }
+  ]),
+  async (req, res) => {
+    try {
+      const now = new Date();
+      let status = "coming";
 
-    if (!poster || !movieUrl) {
-      return res.status(400).json({
-        message: "Missing poster or movieUrl"
+      if (new Date(req.body.releaseDate) <= now) {
+        status = "released";
+      }
+
+      const newMovie = new Movie({
+        title: req.body.title,
+        category: req.body.category,
+        description: req.body.description,
+        hero: req.body.hero,
+        price: Number(req.body.price),
+        releaseDate: new Date(req.body.releaseDate),
+        status,
+        producer: req.body.producer,
+
+        // ✅ Direct Cloudinary URLs
+        poster: req.files.poster[0].path,
+        movieUrl: req.files.movie[0].path
       });
+
+      await newMovie.save();
+
+      res.json({
+        message: "Upload successful",
+        movie: newMovie
+      });
+
+    } catch (error) {
+      console.log("UPLOAD ERROR:", error);
+      res.status(500).json({ message: error.message });
     }
-
-    const newMovie = new Movie({
-      title,
-      category,
-      description,
-      hero,
-      producer,
-      price: Number(price),
-      releaseDate,
-      poster,
-      movieUrl
-    });
-
-    await newMovie.save();
-
-    res.json({
-      success: true,
-      movie: newMovie
-    });
-
-  } catch (error) {
-    console.log("UPLOAD ERROR:", error);
-    res.status(500).json({ message: error.message });
   }
-});
+);
 
 app.get("/api/movies", async (req, res) => {
   const movies = await Movie.find();
