@@ -83,14 +83,10 @@ const razorpay = new Razorpay({
 
 app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
   try {
-
     console.log("UPLOAD BODY:", req.body);
 
-    // 🔥 FIX: prevent crash
     if (!req.body) {
-      return res.status(400).json({
-        message: "req.body is undefined (middleware issue)"
-      });
+      return res.status(400).json({ message: "Body missing" });
     }
 
     const {
@@ -105,11 +101,13 @@ app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
       movie
     } = req.body;
 
-    // 🔥 SAFE CHECK (IMPORTANT)
-    if (!poster || !movie) {
-      return res.status(400).json({
-        message: "Poster or Movie missing"
-      });
+    // 🔥 SAFE FIX (NO CRASH EVER)
+    if (!poster?.url || !poster?.publicId) {
+      return res.status(400).json({ message: "Poster missing" });
+    }
+
+    if (!movie?.url || !movie?.publicId) {
+      return res.status(400).json({ message: "Movie missing" });
     }
 
     const newMovie = new Movie({
@@ -134,18 +132,13 @@ app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
 
     await newMovie.save();
 
-    res.json({
-      success: true,
-      movie: newMovie
-    });
+    res.json({ success: true, movie: newMovie });
 
   } catch (error) {
     console.log("UPLOAD ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 });
-
-
 
 app.get("/api/movies", async (req, res) => {
   const movies = await Movie.find();
