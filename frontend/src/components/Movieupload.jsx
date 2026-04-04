@@ -23,7 +23,8 @@ const Movieupload = () => {
   const UPLOAD_PRESET = import.meta.env.VITE_UPLOAD_PRESET; // 🔥 change this
 
   const handleUpload = async () => {
-
+    console.log("Cloud:", CLOUD_NAME);
+    console.log("Preset:", UPLOAD_PRESET);
     if (!movie || !poster) {
       alert("Please select movie and poster");
       return;

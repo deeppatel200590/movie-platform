@@ -77,47 +77,43 @@ const razorpay = new Razorpay({
 });
 
 
-app.post("/api/movies/upload",
-  auth,
-  adminOnly,
-  async (req, res) => {
-    try {
+app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
+  try {
 
-      const now = new Date();
-      let status = "coming";
+    console.log("BODY:", req.body); // 🔥 ADD THIS
 
-      if (new Date(req.body.releaseDate) <= now) {
-        status = "released";
-      }
+    const now = new Date();
+    let status = "coming";
 
-      const newMovie = new Movie({
-        title: req.body.title,
-        category: req.body.category,
-        description: req.body.description,
-        hero: req.body.hero,
-        price: Number(req.body.price),
-        releaseDate: new Date(req.body.releaseDate),
-        status,
-        producer: req.body.producer,
-
-        // ✅ Correct (coming from frontend)
-        poster: req.body.poster,
-        movieUrl: req.body.movieUrl
-      });
-
-      await newMovie.save();
-
-      res.json({
-        message: "Movie saved successfully",
-        movie: newMovie
-      });
-
-    } catch (error) {
-      console.log("UPLOAD ERROR:", error);
-      res.status(500).json({ message: error.message });
+    if (new Date(req.body.releaseDate) <= now) {
+      status = "released";
     }
+
+    const newMovie = new Movie({
+      title: req.body.title || "",
+      category: req.body.category || "",
+      description: req.body.description || "",
+      hero: req.body.hero || "",
+      price: Number(req.body.price) || 0,
+      releaseDate: req.body.releaseDate ? new Date(req.body.releaseDate) : null,
+      status,
+      producer: req.body.producer || "",
+      poster: req.body.poster || "",
+      movieUrl: req.body.movieUrl || ""
+    });
+
+    await newMovie.save();
+
+    res.json({
+      message: "Movie saved successfully",
+      movie: newMovie
+    });
+
+  } catch (error) {
+    console.log("UPLOAD ERROR:", error); // 🔥 IMPORTANT
+    res.status(500).json({ message: error.message });
   }
-);
+});
 
 app.get("/api/movies", async (req, res) => {
   const movies = await Movie.find();
