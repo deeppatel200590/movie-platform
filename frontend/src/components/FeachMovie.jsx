@@ -1,34 +1,35 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import axios from "axios";
 
 const FeachMovie = () => {
   const [movies, setMovies] = useState([]);
 
-  const handleDelete = async (id) => {
-    try {
-      const token = localStorage.getItem("token");
+  // DELETE MOVIE (with confirmation)
+  const handleDelete = (id) => {
+  const confirmDelete = window.confirm(
+    "Are you sure you want to delete this movie?"
+  );
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/movies/${id}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  if (!confirmDelete) return;
 
-      const data = await res.json();
+  const token = localStorage.getItem("token");
 
-      if (data.success) {
-        alert("Deleted successfully");
-        setMovies((prev) => prev.filter((m) => m._id !== id));
-      } else {
-        alert(data.message || "Delete failed");
-      }
-    } catch (err) {
-      console.log(err);
-      alert("Error deleting");
-    }
-  };
-
+  axios
+    .delete(`${import.meta.env.VITE_API_URL}/api/movies/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+    .then(() => {
+      setMovies((prev) => prev.filter((m) => m._id !== id));
+      alert("Movie deleted successfully");
+    })
+    .catch((err) => {
+      console.error("Delete error:", err.response?.data || err.message);
+      alert(err.response?.data?.message || "Delete failed");
+    });
+};
+  // FETCH MOVIES
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/api/movies`)
       .then((res) => res.json())
@@ -38,7 +39,9 @@ const FeachMovie = () => {
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen mt-15">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">🎬 Movies</h1>
+      <h1 className="text-2xl font-bold mb-6 text-gray-800">
+        🎬 Movies
+      </h1>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
         {movies.map((movie) => (
@@ -49,7 +52,7 @@ const FeachMovie = () => {
             {/* IMAGE */}
             <div className="relative overflow-hidden">
               <img
-                src={movie.poster}   // ✅ FIXED (NO localhost/uploads)
+                src={movie.poster}
                 alt={movie.title}
                 className="w-full h-72 object-cover group-hover:scale-105 transition duration-300"
               />
@@ -63,7 +66,9 @@ const FeachMovie = () => {
                 {movie.title}
               </h2>
 
-              <p className="text-sm text-gray-500">{movie.category}</p>
+              <p className="text-sm text-gray-500">
+                {movie.category}
+              </p>
 
               {/* PURCHASE COUNT */}
               {movie.purchaseCount > 0 && (
@@ -77,7 +82,7 @@ const FeachMovie = () => {
                 ₹{movie.price}
               </p>
 
-              {/* BUTTONS */}
+              {/* DELETE BUTTON */}
               <div className="mt-3">
                 <button
                   onClick={() => handleDelete(movie._id)}

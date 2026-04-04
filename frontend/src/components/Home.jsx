@@ -20,6 +20,13 @@ const Home = () => {
 
   const normalize = (str) => str?.toLowerCase().replace(/[\s-]/g, "");
 
+  // ✅ FIX: normalize date (removes timezone + time issue)
+  const normalizeDate = (date) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  };
+
   // FETCH MOVIES
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/api/movies`)
@@ -27,10 +34,13 @@ const Home = () => {
       .then((data) => {
         setMovies(data);
 
-        const now = new Date();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
         const upcoming = data.filter(
-          (movie) => new Date(movie.releaseDate) > now
+          (movie) => normalizeDate(movie.releaseDate) > today
         );
+
         setUpcomingMovies(upcoming);
       });
   }, []);
@@ -132,7 +142,12 @@ const Home = () => {
 
   // MOVIE CARD
   const MovieCard = ({ movie }) => {
-    const isUpcoming = new Date(movie.releaseDate) > new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const releaseDate = normalizeDate(movie.releaseDate);
+    const isUpcoming = releaseDate > today;
+
     const isPurchased = purchasedMovies.includes(movie._id);
 
     return (
@@ -153,7 +168,6 @@ const Home = () => {
           }}
         >
           <div className="aspect-[2/3]">
-            {/* ✅ FIXED HERE (NO /uploads) */}
             <img
               src={movie.poster}
               alt={movie.title}
@@ -202,7 +216,7 @@ const Home = () => {
   };
 
   return (
-    <div className="bg-[#0f1115] min-h-screen text-gray-100 pb-20">
+    <div className="bg-white min-h-screen text-gray-100 pb-20">
 
       {/* HERO */}
       <div className="relative h-[60vh] flex items-end px-6 md:px-12 pb-12 mb-8">
