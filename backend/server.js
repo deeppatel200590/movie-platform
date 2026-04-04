@@ -110,10 +110,21 @@ app.post("/api/movies/upload", auth, adminOnly, async (req, res) => {
     });
 
   } catch (error) {
-    console.log("UPLOAD ERROR:", error); // 🔥 IMPORTANT
-    res.status(500).json({ message: error.message });
-  }
+  console.log("UPLOAD ERROR FULL:", error); // ❌ basic
+
+  // ✅ ADD THIS (MOST IMPORTANT)
+  console.log("UPLOAD ERROR MESSAGE:", error.message);
+
+  console.log("UPLOAD ERROR STACK:", error.stack);
+
+  res.status(500).json({
+    message: error.message,
+    error: error // optional for deep debug
+  });
+}
 });
+
+
 
 app.get("/api/movies", async (req, res) => {
   const movies = await Movie.find();
