@@ -152,10 +152,10 @@ app.post("/api/signup", async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOTP();
 
-    // ✅ FIRST send OTP
+    // ✅ SEND EMAIL FIRST
     await sendOTP(email, otp);
 
-    // ✅ THEN create user
+    // ✅ ONLY IF EMAIL SUCCESS → CREATE USER
     await User.create({
       name,
       email,
