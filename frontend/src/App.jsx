@@ -18,6 +18,8 @@ import AdminNavbar from "./components/AdminNavbar";
 
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
+import VerifyOtp from "./components/VerifyOtp";
+
 
 const App = () => {
   return (
@@ -29,6 +31,7 @@ const App = () => {
       <Route path="/signup" element={<Signup />} />
       <Route path="/social-login" element={<SocialLogin />} />
       {/* USER ROUTES */}
+      <Route path="/verify-otp" element={<VerifyOtp />} />
       <Route
         path="/home"
         element={
