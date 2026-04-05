@@ -16,7 +16,7 @@ import passport from "./model/passport.js";
 import session from "express-session";
 import { generateOTP } from "./model/otp.js";
 import { sendOTP } from "./model/mailer.js";
-
+import { sendEmail } from "./model/sendEmail.js";
 import { cloudinary } from "./model/cloudinary.js";
 const app = express();
 
@@ -82,6 +82,20 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
+app.get("/test-email", async (req, res) => {
+  try {
+    const email = req.query.email;
+
+    await sendEmail(email);
+
+    res.json({
+      success: true,
+      message: `Email sent to ${email}`
+    });
+  } catch (error) {
+    res.status(500).json({ success: false });
+  }
+});
 
 app.post("/api/movies/upload",
   auth,
