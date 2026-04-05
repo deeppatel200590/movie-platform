@@ -34,6 +34,9 @@ const Signup = () => {
 
       alert(res.data.message || "OTP sent to your email");
 
+      // ✅ SAVE EMAIL FOR OTP PAGE (important for refresh safety)
+      localStorage.setItem("otpEmail", formData.email);
+
       // 👉 redirect to OTP page with email
       navigate("/verify-otp", {
         state: { email: formData.email }

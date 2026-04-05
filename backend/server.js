@@ -15,7 +15,6 @@ import jwt from "jsonwebtoken";
 import passport from "./model/passport.js";
 import session from "express-session";
 import { generateOTP } from "./model/otp.js";
-import { sendOTP } from "./model/mailer.js";
 import { sendEmail } from "./model/sendEmail.js";
 import { cloudinary } from "./model/cloudinary.js";
 const app = express();
@@ -86,13 +85,16 @@ app.get("/test-email", async (req, res) => {
   try {
     const email = req.query.email;
 
-    await sendEmail(email);
+    const otp = "123456"; // test OTP
+
+    await sendEmail(email, otp);
 
     res.json({
       success: true,
       message: `Email sent to ${email}`
     });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ success: false });
   }
 });
@@ -158,27 +160,36 @@ app.post("/api/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    // 1. Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
+    // 2. Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 3. Generate OTP
     const otp = generateOTP();
 
-    // ✅ SEND EMAIL FIRST
-    await sendOTP(email, otp);
+    // 4. Send email FIRST (important)
+    try {
+      await sendEmail(email, otp);
+    } catch (emailError) {
+      return res.status(500).json({ message: "Failed to send OTP email" });
+    }
 
-    // ✅ ONLY IF EMAIL SUCCESS → CREATE USER
+    // 5. Save user AFTER email success
     await User.create({
       name,
       email,
       password: hashedPassword,
       otp,
-      otpExpiry: Date.now() + 5 * 60 * 1000,
+      otpExpiry: Date.now() + 5 * 60 * 1000, // 5 minutes
       isVerified: false
     });
 
+    // 6. Response
     res.json({ message: "OTP sent to your email" });
 
   } catch (error) {

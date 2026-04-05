@@ -6,7 +6,7 @@ const VerifyOtp = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const email = location.state?.email;
+  const email = location.state?.email || localStorage.getItem("otpEmail");
 
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);

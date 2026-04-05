@@ -1,21 +1,17 @@
 import axios from "axios";
 
-export const sendEmail = async (receiverEmail) => {
+export const sendEmail = async (email, otp) => {
   try {
-    const response = await axios.post(
+    await axios.post(
       "https://api.brevo.com/v3/smtp/email",
       {
         sender: {
-          name: "Your App",
+          name: "Movie App",
           email: "deepadroja09@gmail.com"
         },
-        to: [
-          {
-            email: receiverEmail
-          }
-        ],
-        subject: "Test Email from Brevo API",
-        htmlContent: "<h1>Hello! Email works 🚀</h1>"
+        to: [{ email }],
+        subject: "Your OTP Code",
+        htmlContent: `<h2>Your OTP is: ${otp}</h2>`
       },
       {
         headers: {
@@ -25,9 +21,8 @@ export const sendEmail = async (receiverEmail) => {
       }
     );
 
-    console.log("Email sent:", response.data);
-    return response.data;
   } catch (error) {
-    console.error("Error sending email:", error.response?.data || error.message);
+    console.error("Email error:", error.response?.data || error.message);
+    throw new Error("Email failed");
   }
 };
