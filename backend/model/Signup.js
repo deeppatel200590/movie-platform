@@ -1,11 +1,12 @@
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
-    name:{
+    name: {
         type: String,
         required: true,
         trim: true
     },
+
     email: {
         type: String,
         required: true,
@@ -16,19 +17,29 @@ const userSchema = new mongoose.Schema({
     password: {
         type: String,
         required: function () {
-            return !this.googleId; // only required if NOT google user
+            return !this.googleId;
         }
     },
 
     googleId: {
-        type: String
+        type: String,
+        default: null
     },
 
     role: {
         type: String,
         enum: ["user", "admin"],
         default: "user"
-    }
-},{timestamps : true});
+    },
 
-export default mongoose.model('User', userSchema);
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+
+    otp: String,
+    otpExpiry: Date
+
+}, { timestamps: true });
+
+export default mongoose.model("User", userSchema);

@@ -1,14 +1,18 @@
 import React, { useState } from "react";
 import axios from "axios";
 import logo from "../assets/varenyalogo.png";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const Signup = () => {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: ""
   });
+
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({
@@ -21,13 +25,24 @@ const Signup = () => {
     e.preventDefault();
 
     try {
+      setLoading(true);
+
       const res = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/signup`,
         formData
       );
-      alert(res.data.message);
+
+      alert(res.data.message || "OTP sent to your email");
+
+      // 👉 redirect to OTP page with email
+      navigate("/verify-otp", {
+        state: { email: formData.email }
+      });
+
     } catch (error) {
-      alert(error.response?.data?.message || "Error");
+      alert(error.response?.data?.message || "Signup failed");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -47,7 +62,7 @@ const Signup = () => {
           Create Account
         </h2>
 
-        {/* NORMAL SIGNUP */}
+        {/* SIGNUP FORM */}
         <form onSubmit={handleSubmit}>
           <input
             type="text"
@@ -78,9 +93,12 @@ const Signup = () => {
 
           <button
             type="submit"
-            className="w-full bg-red-600 text-white p-2 rounded hover:bg-red-700 transition"
+            disabled={loading}
+            className={`w-full p-2 rounded text-white transition ${
+              loading ? "bg-gray-600" : "bg-red-600 hover:bg-red-700"
+            }`}
           >
-            Sign Up
+            {loading ? "Sending OTP..." : "Sign Up"}
           </button>
         </form>
 
@@ -108,6 +126,7 @@ const Signup = () => {
             Login
           </Link>
         </p>
+
       </div>
     </div>
   );

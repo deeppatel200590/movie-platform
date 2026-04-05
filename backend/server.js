@@ -14,6 +14,8 @@ import crypto from "crypto";
 import jwt from "jsonwebtoken";
 import passport from "./model/passport.js";
 import session from "express-session";
+import { generateOTP } from "./model/otp.js";
+import { sendOTP } from "./model/mailer.js";
 
 import { cloudinary } from "./model/cloudinary.js";
 const app = express();
@@ -143,24 +145,30 @@ app.post("/api/signup", async (req, res) => {
     const { name, email, password } = req.body;
 
     const existingUser = await User.findOne({ email });
+
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = new User({
+    const otp = generateOTP();
+
+    await User.create({
       name,
       email,
-      password: hashedPassword
+      password: hashedPassword,
+      otp,
+      otpExpiry: Date.now() + 5 * 60 * 1000,
+      isVerified: false
     });
 
-    await user.save();
+    await sendOTP(email, otp);
 
-    res.status(201).json({ message: "Signup successful" });
+    res.json({ message: "OTP sent to your email" });
 
   } catch (error) {
-    res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: error.message });
   }
 });
 
