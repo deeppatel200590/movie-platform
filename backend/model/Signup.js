@@ -1,45 +1,45 @@
-import mongoose from "mongoose";
+    import mongoose from "mongoose";
 
-const userSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: true,
-        trim: true
-    },
+    const userSchema = new mongoose.Schema({
+        name: {
+            type: String,
+            required: true,
+            trim: true
+        },
 
-    email: {
-        type: String,
-        required: true,
-        unique: true,
-        lowercase: true
-    },
+        email: {
+            type: String,
+            required: true,
+            unique: true,
+            lowercase: true
+        },
 
-    password: {
-        type: String,
-        required: function () {
-            return !this.googleId;
-        }
-    },
+        password: {
+            type: String,
+            required: function () {
+                return !this.googleId;
+            }
+        },
 
-    googleId: {
-        type: String,
-        default: null
-    },
+        googleId: {
+            type: String,
+            default: null
+        },
 
-    role: {
-        type: String,
-        enum: ["user", "admin"],
-        default: "user"
-    },
+        role: {
+            type: String,
+            enum: ["user", "admin"],
+            default: "user"
+        },
 
-    isVerified: {
-        type: Boolean,
-        default: false
-    },
+        isVerified: {
+            type: Boolean,
+            default: false
+        },
 
-    otp: String,
-    otpExpiry: Date
+        otp: String,
+        otpExpiry: Date
 
-}, { timestamps: true });
+    }, { timestamps: true });
 
-export default mongoose.model("User", userSchema);
+    export default mongoose.model("User", userSchema);

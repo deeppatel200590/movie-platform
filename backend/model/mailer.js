@@ -5,13 +5,12 @@ export const sendOTP = async (email, otp) => {
     console.log("Trying to send OTP...");
 
     const transporter = nodemailer.createTransport({
-      host: "smtp.gmail.com",
-      port: 587,
-      secure: false, // TLS
-      auth: {
-        user: process.env.EMAIL,
-        pass: process.env.EMAIL_PASS
-      }
+    host: "smtp-relay.brevo.com", // ✅ FIXED
+    port: 587,
+    auth: {
+        user: process.env.BREVO_USER,
+        pass: process.env.BREVO_PASS
+    }
     });
 
     const info = await transporter.sendMail({
