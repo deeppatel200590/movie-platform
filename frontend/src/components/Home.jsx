@@ -289,7 +289,7 @@ const isUpcomingMovie = (movie) => {
         {/* UPCOMING */}
         {!search && upcomingMovies.length > 0 && (
           <section>
-            <h2 className="text-2xl font-bold mb-4">
+            <h2 className="text-2xl font-bold mb-4 text-black">
               Upcoming Movies
             </h2>
 
@@ -305,7 +305,7 @@ const isUpcomingMovie = (movie) => {
 
         {/* GRID */}
         <section>
-          <h2 className="text-2xl font-bold mb-6">
+          <h2 className="text-2xl font-bold mb-6 text-black">
             {search ? "Search Results" : "All Movies"}
           </h2>
 
