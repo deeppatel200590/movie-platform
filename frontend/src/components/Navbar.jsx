@@ -7,11 +7,7 @@ const Navbar = () => {
   const [open, setOpen] = useState(false);
 
   const handleLogout = () => {
-    // ❌ OLD: localStorage.removeItem("user");
-
-    // ✅ NEW: remove token only
     localStorage.removeItem("token");
-
     navigate("/login");
   };
 
@@ -28,7 +24,7 @@ const Navbar = () => {
         <Link to="/home" className="hover:text-gray-300">Home</Link>
         <Link to="/about" className="hover:text-gray-300">About</Link>
         <Link to="/contact" className="hover:text-gray-300">Contact</Link>
-         <Link to="/privacy" className="hover:text-gray-300">Privacy Policy</Link>
+        <Link to="/policy" className="hover:text-gray-300">Policy</Link>
 
         <button
           onClick={handleLogout}
@@ -55,8 +51,8 @@ const Navbar = () => {
             About
           </Link>
 
-          <Link to="/privacy" onClick={() => setOpen(false)}>
-            Privacy Policy
+          <Link to="/policy" onClick={() => setOpen(false)}>
+            Policy
           </Link>
 
           <Link to="/contact" onClick={() => setOpen(false)}>
