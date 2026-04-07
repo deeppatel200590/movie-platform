@@ -8,7 +8,8 @@ const PolicyPage = () => {
       padding: "40px",
       fontFamily: "Arial, sans-serif",
       lineHeight: "1.7"
-    }}>
+    }}
+    className="mt-10">
       <div style={{ maxWidth: "900px", margin: "auto" }}>
 
         <h1 style={{ fontSize: "36px", marginBottom: "10px" }}>
