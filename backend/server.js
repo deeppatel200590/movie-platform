@@ -21,7 +21,7 @@ import r2 from "./model/r2.js";
 const app = express();
 
 app.use(session({
-  secret: "secretkey",
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true
 }));
@@ -137,10 +137,9 @@ app.post("/api/movies/upload",
       }));
 
       // ✅ Generate URLs
-      const posterUrl = `https://${process.env.R2_BUCKET_NAME}.${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${posterKey}`;
-
-      const movieUrl = `https://${process.env.R2_BUCKET_NAME}.${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${movieKey}`;
-
+      // ✅ Use PUBLIC R2 URL (IMPORTANT)
+      const posterUrl = `https://pub-b7ae3ac99fe042c2b66e569f1ba04c88.r2.dev/${posterKey}`;
+      const movieUrl = `https://pub-b7ae3ac99fe042c2b66e569f1ba04c88.r2.dev/${movieKey}`;
       const releaseDate = new Date(req.body.releaseDate);
       let status = "coming";
 
@@ -294,7 +293,7 @@ app.get("/api/contact", auth, adminOnly, async (req, res) => {
   }
 });
 
-app.delete("/api/contact/:id", auth, async (req, res) => {
+app.delete("/api/contact/:id", auth,adminOnly, async (req, res) => {
   try {
     await Contact.findByIdAndDelete(req.params.id);
     res.json({ success: true });
@@ -378,28 +377,20 @@ app.post("/api/payment/success", async (req, res) => {
 });
 
 app.post("/api/payment/order", async (req, res) => {
-  try {
-    const { amount } = req.body;
+  const { movieId } = req.body;
 
-    // ✅ STRONG VALIDATION
-    if (!amount || isNaN(amount) || amount <= 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Valid amount required"
-      });
-    }
+  const movie = await Movie.findById(movieId);
 
-    const order = await razorpay.orders.create({
-      amount: Number(amount) * 100,
-      currency: "INR",
-    });
-
-    res.json(order);
-
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ success: false });
+  if (!movie) {
+    return res.status(404).json({ message: "Movie not found" });
   }
+
+  const order = await razorpay.orders.create({
+    amount: movie.price * 100,
+    currency: "INR",
+  });
+
+  res.json(order);
 });
 
 app.get("/api/purchase/my", auth, async (req, res) => {
