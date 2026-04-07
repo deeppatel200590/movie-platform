@@ -16,7 +16,8 @@ import passport from "./model/passport.js";
 import session from "express-session";
 import { generateOTP } from "./model/otp.js";
 import { sendEmail } from "./model/sendEmail.js";
-import { cloudinary } from "./model/cloudinary.js";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import r2 from "./model/r2.js";
 const app = express();
 
 app.use(session({
@@ -43,7 +44,10 @@ passport.deserializeUser(async (id, done) => {
   const user = await User.findById(id);
   done(null, user);
 });
-
+console.log("ENV CHECK:", {
+  clientId: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+});
 
 const auth = (req, res, next) => {
   try {
@@ -108,9 +112,36 @@ app.post("/api/movies/upload",
   ]),
   async (req, res) => {
     try {
-      const now = new Date();
-      const releaseDate = new Date(req.body.releaseDate);
 
+      const posterFile = req.files.poster[0];
+      const movieFile = req.files.movie[0];
+
+      // 🔥 Upload Poster
+      const posterKey = `posters/${Date.now()}-${posterFile.originalname}`;
+
+      await r2.send(new PutObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Key: posterKey,
+        Body: posterFile.buffer,
+        ContentType: posterFile.mimetype,
+      }));
+
+      // 🔥 Upload Movie
+      const movieKey = `movies/${Date.now()}-${movieFile.originalname}`;
+
+      await r2.send(new PutObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME,
+        Key: movieKey,
+        Body: movieFile.buffer,
+        ContentType: movieFile.mimetype,
+      }));
+
+      // ✅ Generate URLs
+      const posterUrl = `https://${process.env.R2_BUCKET_NAME}.${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${posterKey}`;
+
+      const movieUrl = `https://${process.env.R2_BUCKET_NAME}.${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com/${movieKey}`;
+
+      const releaseDate = new Date(req.body.releaseDate);
       let status = "coming";
 
       if (!isNaN(releaseDate.getTime()) && releaseDate <= new Date()) {
@@ -123,13 +154,11 @@ app.post("/api/movies/upload",
         description: req.body.description,
         hero: req.body.hero,
         price: Number(req.body.price),
-        releaseDate: new Date(req.body.releaseDate),
+        releaseDate,
         status,
         producer: req.body.producer,
-
-        // ✅ Direct Cloudinary URLs
-        poster: req.files.poster[0].path,
-        movieUrl: req.files.movie[0].path
+        poster: posterUrl,
+        movieUrl: movieUrl
       });
 
       await newMovie.save();
