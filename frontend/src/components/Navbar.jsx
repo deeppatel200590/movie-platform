@@ -28,6 +28,7 @@ const Navbar = () => {
         <Link to="/home" className="hover:text-gray-300">Home</Link>
         <Link to="/about" className="hover:text-gray-300">About</Link>
         <Link to="/contact" className="hover:text-gray-300">Contact</Link>
+         <Link to="/privacy" className="hover:text-gray-300">Privacy Policy</Link>
 
         <button
           onClick={handleLogout}
