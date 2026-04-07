@@ -1,6 +1,6 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import PolicyPage from "./components/PolicyPage";
+import PolicyPage from "./components/PrivacyPolicy";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import Home from "./components/Home";
