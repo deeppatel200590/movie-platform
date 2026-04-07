@@ -54,6 +54,10 @@ const Navbar = () => {
             About
           </Link>
 
+          <Link to="/privacy" onClick={() => setOpen(false)}>
+            Privacy Policy
+          </Link>
+
           <Link to="/contact" onClick={() => setOpen(false)}>
             Contact
           </Link>

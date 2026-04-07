@@ -1,6 +1,6 @@
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-
+import PolicyPage from "./components/PolicyPage";
 import Login from "./components/Login";
 import Signup from "./components/Signup";
 import Home from "./components/Home";
@@ -32,6 +32,7 @@ const App = () => {
       <Route path="/social-login" element={<SocialLogin />} />
       {/* USER ROUTES */}
       <Route path="/verify-otp" element={<VerifyOtp />} />
+      <Route path="/policy" element={<PolicyPage />} />
       <Route
         path="/home"
         element={
