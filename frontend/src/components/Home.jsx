@@ -3,61 +3,36 @@ import { Link, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 import { loadRazorpay } from "../utils/loadRazorpay";
-import { Search, Play, ShoppingCart, Clock, Flame } from "lucide-react";
+import { Search, Play, ShoppingCart, Clock } from "lucide-react";
 
 const Home = () => {
   const navigate = useNavigate();
 
   const [movies, setMovies] = useState([]);
   const [recentMovies, setRecentMovies] = useState([]);
-  const [upcomingMovies, setUpcomingMovies] = useState([]);
   const [purchasedMovies, setPurchasedMovies] = useState([]);
 
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
 
-  const categories = ["All", "Action", "Drama", "Sci-Fi", "Comedy", "Horror"];
+  const normalize = (str) => str?.toLowerCase().replace(/[\s-]/g, "");
 
-  const normalize = (str) =>
-    str?.toLowerCase().replace(/[\s-]/g, "");
+  const isUpcomingMovie = (movie) => {
+    const releaseDate = movie.releaseDate || movie.release_date;
+    if (!releaseDate) return false;
 
-  // ✅ FIXED SAFE DATE LOGIC
-const isUpcomingMovie = (movie) => {
-  if (!movie) return false;
-
-  const releaseDate = movie.releaseDate || movie.release_date;
-
-  if (!releaseDate) return false;
-
-  const releaseTime = new Date(releaseDate).getTime();
-  if (isNaN(releaseTime)) return false;
-
-  return movie.status === "coming" || releaseTime > Date.now();
-};
+    return new Date(releaseDate).getTime() > Date.now();
+  };
 
   // FETCH MOVIES
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/api/movies`)
       .then((res) => res.json())
-      .then((data) => {
-        setMovies(data);
-
-        const upcoming = data.filter((movie) =>
-          isUpcomingMovie(movie)
-        );
-
-        setUpcomingMovies(upcoming);
-      })
+      .then((data) => setMovies(data))
       .catch((err) => console.error(err));
   }, []);
 
-  // RECENT
-  useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("recentMovies")) || [];
-    setRecentMovies(stored);
-  }, []);
-
-  // PURCHASED
+  // PURCHASED MOVIES
   useEffect(() => {
     const fetchPurchased = async () => {
       try {
@@ -84,6 +59,8 @@ const isUpcomingMovie = (movie) => {
   const handlePaymentSuccess = async (response, movie) => {
     try {
       const token = localStorage.getItem("token");
+      if (!token) return alert("Login required");
+
       const decoded = jwtDecode(token);
 
       const res = await axios.post(
@@ -100,41 +77,64 @@ const isUpcomingMovie = (movie) => {
       if (res.data.success) {
         setPurchasedMovies((prev) => [...prev, movie._id]);
       }
-    } catch {
-      alert("Error saving purchase");
+    } catch (err) {
+      console.error(err);
+      alert("Payment verification failed");
     }
   };
 
-  // BUY
+  // BUY MOVIE (FIXED)
   const handleBuy = async (movie) => {
-    const loaded = await loadRazorpay();
-    if (!loaded || !window.Razorpay) return;
-
     try {
+      const loaded = await loadRazorpay();
+      if (!loaded || !window.Razorpay) {
+        alert("Razorpay failed to load");
+        return;
+      }
+
+      // ✅ IMPORTANT: send movieId (NOT amount)
       const res = await axios.post(
         `${import.meta.env.VITE_API_URL}/api/payment/order`,
-        {
-          amount: Number(movie.price),
-        }
+        { movieId: movie._id }
       );
+
+      const order = res.data;
+
+      if (!order?.id) {
+        alert("Order creation failed");
+        return;
+      }
 
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: res.data.amount,
-        currency: "INR",
-        order_id: res.data.id,
-        handler: (response) =>
-          handlePaymentSuccess(response, movie),
+        amount: order.amount,
+        currency: order.currency,
+        order_id: order.id, // ✅ MUST BE EXACT
+
+        name: "Movie Platform",
+        description: movie.title,
+
+        handler: (response) => handlePaymentSuccess(response, movie),
+
+        theme: {
+          color: "#3399cc",
+        },
       };
 
-      new window.Razorpay(options).open();
+      const rzp = new window.Razorpay(options);
+
+      rzp.on("payment.failed", function (response) {
+        console.error("Payment Failed:", response.error);
+        alert("Payment failed");
+      });
+
+      rzp.open();
     } catch (err) {
       console.error(err);
       alert("Payment failed");
     }
   };
 
-  // FILTER
   const filteredMovies = movies.filter((movie) => {
     const matchesSearch = movie.title
       ?.toLowerCase()
@@ -147,69 +147,46 @@ const isUpcomingMovie = (movie) => {
     return matchesSearch && matchesCategory;
   });
 
-  // MOVIE CARD
   const MovieCard = ({ movie }) => {
     const isUpcoming = isUpcomingMovie(movie);
     const isPurchased = purchasedMovies.includes(movie._id);
 
     return (
-      <div className="group bg-gray-900 rounded-xl overflow-hidden shadow-lg hover:scale-105 transition">
+      <div className="bg-gray-900 rounded-xl overflow-hidden shadow-lg hover:scale-105 transition">
 
-        <Link
-          to={`/poster/${movie._id}`}
-          onClick={() => {
-            let recent =
-              JSON.parse(localStorage.getItem("recentMovies")) || [];
-
-            recent = [
-              movie,
-              ...recent.filter((m) => m._id !== movie._id),
-            ].slice(0, 10);
-
-            localStorage.setItem(
-              "recentMovies",
-              JSON.stringify(recent)
-            );
-          }}
-        >
+        <Link to={`/poster/${movie._id}`}>
           <div className="aspect-[2/3]">
             <img
               src={movie.poster}
-              alt={movie.title}
               className="w-full h-full object-cover"
+              alt={movie.title}
             />
           </div>
         </Link>
 
         <div className="p-3">
-          <p className="text-xs text-blue-400 font-bold uppercase">
-            {movie.category}
-          </p>
-
           <h3 className="text-white font-semibold truncate">
             {movie.title}
           </h3>
 
-          <p className="text-green-400 font-bold mt-1">
-            ₹{movie.price}
-          </p>
+          <p className="text-green-400 font-bold">₹{movie.price}</p>
 
           <div className="mt-3">
             {isUpcoming ? (
-              <button className="w-full py-2 bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 text-sm">
+              <button className="w-full py-2 bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2">
                 <Clock size={16} /> Coming Soon
               </button>
             ) : isPurchased ? (
               <button
                 onClick={() => navigate(`/movie/${movie._id}`)}
-                className="w-full py-2 bg-blue-600 text-white rounded-lg flex items-center justify-center gap-2 text-sm"
+                className="w-full py-2 bg-blue-600 text-white rounded-lg flex items-center justify-center gap-2"
               >
                 <Play size={16} /> Watch
               </button>
             ) : (
               <button
                 onClick={() => handleBuy(movie)}
-                className="w-full py-2 bg-white text-black rounded-lg flex items-center justify-center gap-2 text-sm font-bold"
+                className="w-full py-2 bg-white text-black rounded-lg flex items-center justify-center gap-2 font-bold"
               >
                 <ShoppingCart size={16} /> Buy
               </button>
@@ -221,10 +198,11 @@ const isUpcomingMovie = (movie) => {
   };
 
   return (
-    <div className="bg-white min-h-screen text-gray-100 pb-20">
+    <div className="bg-black min-h-screen text-white pb-20">
 
       {/* HERO */}
-      <div className="relative h-[60vh] flex items-end px-6 md:px-12 pb-12 mb-8">
+      <div className="relative h-[60vh] flex items-end px-6 pb-12 overflow-hidden">
+
         <div className="absolute inset-0">
           <img
             src="https://images.unsplash.com/photo-1626814026160-2237a95fc5a0"
@@ -237,89 +215,22 @@ const isUpcomingMovie = (movie) => {
             UNLIMITED <span className="text-blue-500">CINEMA</span>
           </h1>
 
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
-            <input
-              type="text"
-              placeholder="Search movies..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-gray-900 border border-gray-700 py-3 pl-10 rounded-xl"
-            />
-          </div>
+          <input
+            type="text"
+            placeholder="Search movies..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full max-w-md bg-gray-900 border border-gray-700 py-3 px-4 rounded-xl"
+          />
         </div>
       </div>
 
-      {/* CATEGORY */}
-      <div className="px-6 md:px-12 mb-6 flex gap-3 overflow-x-auto no-scrollbar">
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            className={`px-5 py-2 rounded-full text-sm font-bold ${
-              activeCategory === cat
-                ? "bg-blue-600 text-white"
-                : "bg-gray-800 text-gray-400"
-            }`}
-          >
-            {cat}
-          </button>
+      {/* MOVIES */}
+      <div className="px-6 grid grid-cols-2 md:grid-cols-4 gap-6">
+        {filteredMovies.map((movie) => (
+          <MovieCard key={movie._id} movie={movie} />
         ))}
       </div>
-
-      <div className="px-6 md:px-12 space-y-12">
-
-        {/* RECENT */}
-        {!search && recentMovies.length > 0 && (
-          <section>
-            <h2 className="text-2xl font-bold mb-4 text-black flex items-center gap-2">
-              <Flame className="text-orange-500" /> Continue Watching
-            </h2>
-
-            <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar">
-              {recentMovies.map((movie) => (
-                <div key={movie._id} className="w-48 shrink-0">
-                  <MovieCard movie={movie} />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* UPCOMING */}
-        {!search && upcomingMovies.length > 0 && (
-          <section>
-            <h2 className="text-2xl font-bold mb-4 text-black">
-              Upcoming Movies
-            </h2>
-
-            <div className="flex gap-6 overflow-x-auto pb-4 no-scrollbar">
-              {upcomingMovies.map((movie) => (
-                <div key={movie._id} className="w-48 shrink-0">
-                  <MovieCard movie={movie} />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* GRID */}
-        <section>
-          <h2 className="text-2xl font-bold mb-6 text-black">
-            {search ? "Search Results" : "All Movies"}
-          </h2>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            {filteredMovies.map((movie) => (
-              <MovieCard key={movie._id} movie={movie} />
-            ))}
-          </div>
-        </section>
-      </div>
-
-      <style>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-      `}</style>
     </div>
   );
 };
