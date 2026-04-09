@@ -93,7 +93,7 @@ const PolicyPage = () => {
 
         <h2>12. Contact Us</h2>
         <p>
-          Email: <strong>ve@gmail.com</strong>
+          Email: <strong>vedsonioriginals@gmail.com</strong>
         </p>
 
         {/* FOOTER */}
