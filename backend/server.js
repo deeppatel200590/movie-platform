@@ -377,20 +377,37 @@ app.post("/api/payment/success", async (req, res) => {
 });
 
 app.post("/api/payment/order", async (req, res) => {
-  const { movieId } = req.body;
+  try {
+    const { movieId } = req.body;
 
-  const movie = await Movie.findById(movieId);
+    if (!movieId) {
+      return res.status(400).json({ message: "movieId required" });
+    }
 
-  if (!movie) {
-    return res.status(404).json({ message: "Movie not found" });
+    const movie = await Movie.findById(movieId);
+
+    if (!movie) {
+      return res.status(404).json({ message: "Movie not found" });
+    }
+
+    const options = {
+      amount: movie.price * 100, // paise
+      currency: "INR",
+      receipt: `rcpt_${Date.now()}`
+    };
+
+    const order = await razorpay.orders.create(options);
+
+    return res.json({
+      id: order.id,          // ✅ REQUIRED FOR FRONTEND
+      amount: order.amount,
+      currency: order.currency
+    });
+
+  } catch (err) {
+    console.error("ORDER ERROR:", err);
+    res.status(500).json({ message: "Order creation failed" });
   }
-
-  const order = await razorpay.orders.create({
-    amount: movie.price * 100,
-    currency: "INR",
-  });
-
-  res.json(order);
 });
 
 app.get("/api/purchase/my", auth, async (req, res) => {
