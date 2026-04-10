@@ -121,9 +121,10 @@ app.post("/api/movies/upload",
 
       await r2.send(new PutObjectCommand({
         Bucket: process.env.R2_BUCKET_NAME,
-        Key: posterKey,
-        Body: posterFile.buffer,
-        ContentType: posterFile.mimetype,
+        Key: movieKey,
+        Body: movieFile.buffer,
+        ContentType: movieFile.mimetype,
+        ContentDisposition: "inline"   // 🔥 VERY IMPORTANT
       }));
 
       // 🔥 Upload Movie
