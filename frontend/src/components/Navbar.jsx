@@ -24,7 +24,6 @@ const Navbar = () => {
         <Link to="/home" className="hover:text-gray-300">Home</Link>
         <Link to="/about" className="hover:text-gray-300">About</Link>
         <Link to="/contact" className="hover:text-gray-300">Contact</Link>
-        <Link to="/policy" className="hover:text-gray-300">Policy</Link>
 
         <button
           onClick={handleLogout}
@@ -49,10 +48,6 @@ const Navbar = () => {
 
           <Link to="/about" onClick={() => setOpen(false)}>
             About
-          </Link>
-
-          <Link to="/policy" onClick={() => setOpen(false)}>
-            Policy
           </Link>
 
           <Link to="/contact" onClick={() => setOpen(false)}>

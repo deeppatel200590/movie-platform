@@ -15,11 +15,15 @@ import Movieupload from "./components/Movieupload";
 
 import Navbar from "./components/Navbar";
 import AdminNavbar from "./components/AdminNavbar";
+import Footer from "./components/Footer"; // ✅ added
 
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 import VerifyOtp from "./components/VerifyOtp";
 
+// 👉 ADD THESE if you created them
+// import TermsConditions from "./components/TermsConditions";
+// import RefundPolicy from "./components/RefundPolicy";
 
 const App = () => {
   return (
@@ -30,8 +34,10 @@ const App = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/social-login" element={<SocialLogin />} />
+
       {/* USER ROUTES */}
       <Route path="/verify-otp" element={<VerifyOtp />} />
+
       <Route
         path="/home"
         element={
@@ -39,32 +45,32 @@ const App = () => {
             <>
               <Navbar />
               <Home />
+              <Footer /> {/* optional but good */}
             </>
           </ProtectedRoute>
         }
       />
 
+      {/* ✅ FIXED: made PUBLIC + added Footer */}
       <Route
         path="/about"
         element={
-          <ProtectedRoute>
-            <>
-              <Navbar />
-              <About />
-            </>
-          </ProtectedRoute>
+          <>
+            <Navbar />
+            <About />
+            <Footer />
+          </>
         }
       />
 
       <Route
         path="/contact"
         element={
-          <ProtectedRoute>
-            <>
-              <Navbar />
-              <ContactUs />
-            </>
-          </ProtectedRoute>
+          <>
+            <Navbar />
+            <ContactUs />
+            <Footer />
+          </>
         }
       />
 
@@ -74,9 +80,33 @@ const App = () => {
           <>
             <Navbar />
             <PolicyPage />
+            <Footer />
           </>
         }
       />
+
+      {/* ✅ NEW REQUIRED PAGES */}
+      {/* <Route
+        path="/terms"
+        element={
+          <>
+            <Navbar />
+            <TermsConditions />
+            <Footer />
+          </>
+        }
+      /> */}
+
+      {/* <Route
+        path="/refund"
+        element={
+          <>
+            <Navbar />
+            <RefundPolicy />
+            <Footer />
+          </>
+        }
+      /> */}
 
       <Route
         path="/movie/:id"
