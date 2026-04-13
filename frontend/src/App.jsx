@@ -22,8 +22,8 @@ import AdminRoute from "./AdminRoute";
 import VerifyOtp from "./components/VerifyOtp";
 
 // 👉 ADD THESE if you created them
-// import TermsConditions from "./components/TermsConditions";
-// import RefundPolicy from "./components/RefundPolicy";
+import TermsConditions from "./components/TermsConditions";
+import RefundPolicy from "./components/RefundPolicy";
 
 const App = () => {
   return (
@@ -86,7 +86,7 @@ const App = () => {
       />
 
       {/* ✅ NEW REQUIRED PAGES */}
-      {/* <Route
+      <Route
         path="/terms"
         element={
           <>
@@ -95,9 +95,9 @@ const App = () => {
             <Footer />
           </>
         }
-      /> */}
+      />
 
-      {/* <Route
+      <Route
         path="/refund"
         element={
           <>
@@ -106,7 +106,7 @@ const App = () => {
             <Footer />
           </>
         }
-      /> */}
+      />
 
       <Route
         path="/movie/:id"

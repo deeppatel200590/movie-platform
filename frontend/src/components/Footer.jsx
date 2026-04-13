@@ -10,7 +10,7 @@ const Footer = () => {
 
         {/* BRAND */}
         <div>
-          <h2 className="text-lg font-semibold mb-3">YourBrand</h2>
+          <h2 className="text-lg font-semibold mb-3">Verenya</h2>
           <p className="text-gray-400">
             A digital platform providing entertainment services. 
             Enjoy seamless experience with secure payments.
@@ -30,16 +30,15 @@ const Footer = () => {
         {/* CONTACT INFO */}
         <div>
           <h2 className="text-lg font-semibold mb-3">Contact</h2>
-          <p className="text-gray-400">Email: support@yourdomain.com</p>
-          <p className="text-gray-400">Phone: +91 XXXXX XXXXX</p>
-          <p className="text-gray-400">Ahmedabad, Gujarat, India</p>
+          <p className="text-gray-400">Email: vedsonioriginals@gmail.com</p>
+          <p className="text-gray-400">Anjar, Gujarat, India</p>
         </div>
 
       </div>
 
       {/* BOTTOM BAR */}
       <div className="border-t border-gray-700 text-center py-4 text-gray-400 text-sm">
-        © 2026 VED PRAKASHBHAI SONI. All rights reserved.
+        © 2026 All rights reserved.
       </div>
     </footer>
   );
