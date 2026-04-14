@@ -240,7 +240,7 @@ const isUpcomingMovie = (movie) => {
 
         <div className="relative z-10">
           <h1 className="text-4xl md:text-6xl font-black mb-4">
-            Varenya <span className="text-blue-500">FILMS</span>
+            ENJOY THE <span className="text-blue-500">MOVIES</span>
           </h1>
 
           <div className="relative max-w-md">
