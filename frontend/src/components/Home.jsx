@@ -231,16 +231,16 @@ const isUpcomingMovie = (movie) => {
 
       {/* HERO */}
       <div className="relative h-[60vh] flex items-end px-6 md:px-12 pb-12 mb-8">
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 mb-5">
           <img
-            src="https://images.unsplash.com/photo-1626814026160-2237a95fc5a0"
-            className="w-full h-full object-cover opacity-40"
+            src="https://pub-b7ae3ac99fe042c2b66e569f1ba04c88.r2.dev/AD0B81B1-C8C7-4D83-B37B-2A5233E55F78.png"
+            className="w-full h-full object-cover"
           />
         </div>
 
         <div className="relative z-10">
           <h1 className="text-4xl md:text-6xl font-black mb-4">
-            UNLIMITED <span className="text-blue-500">CINEMA</span>
+            Varenya <span className="text-blue-500">FILMS</span>
           </h1>
 
           <div className="relative max-w-md">
