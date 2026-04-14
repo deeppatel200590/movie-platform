@@ -78,7 +78,7 @@ const TermsConditions = () => {
 
         <h2>10. Contact Us</h2>
         <p>
-          Email: <strong>vedsonioriginals@gmail.com</strong>
+          Email: <strong>vedsoniorignals@gmail.com</strong>
         </p>
 
         {/* LEGAL NAME (IMPORTANT) */}

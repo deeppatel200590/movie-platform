@@ -30,7 +30,7 @@ const Footer = () => {
         {/* CONTACT INFO */}
         <div>
           <h2 className="text-lg font-semibold mb-3">Contact</h2>
-          <p className="text-gray-400">Email: vedsonioriginals@gmail.com</p>
+          <p className="text-gray-400">Email: vedsoniorignals@gmail.com</p>
           <p className="text-gray-400">Anjar, Gujarat, India</p>
         </div>
 

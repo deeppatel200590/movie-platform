@@ -49,7 +49,7 @@ const RefundPolicy = () => {
 
         <h2>5. Contact Us</h2>
         <p>
-          Email: <strong>vedsonioriginals@gmail.com</strong>
+          Email: <strong>vedsoniorignals@gmail.com</strong>
         </p>
 
         <p style={{ marginTop: "20px", color: "#94a3b8" }}>
