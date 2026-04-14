@@ -62,6 +62,10 @@ const PolicyPage = () => {
         <p>
           Email: <strong>vedsonioriginals@gmail.com</strong>
         </p>
+        
+        <p style={{ marginTop: "20px", color: "#94a3b8" }}>
+          This platform is operated by VED PRAKASHBHAI SONI.
+        </p>
 
         {/* FOOTER */}
         <div
