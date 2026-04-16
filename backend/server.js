@@ -50,6 +50,7 @@ passport.deserializeUser(async (id, done) => {
 
 Cashfree.XClientId = process.env.CASHFREE_APP_ID;
 Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
+
 Cashfree.XEnvironment =
   process.env.CASHFREE_ENV === "production"
     ? CFEnvironment.PRODUCTION
@@ -383,34 +384,30 @@ app.post("/api/payment/check", auth, async (req, res) => {
 app.post("/api/payment/verify", auth, async (req, res) => {
   try {
     const { orderId, movieId } = req.body;
-
     const userId = req.user.id;
 
     const response = await Cashfree.PGFetchOrder(orderId);
 
     const movie = await Movie.findById(movieId);
-    if (!movie) {
-      return res.status(404).json({ success: false, message: "Movie not found" });
-    }
+    if (!movie) return res.status(404).json({ success: false });
 
-    if (
-      response.data.order_status === "PAID" &&
-      Number(response.data.order_amount) === Number(movie.price)
-    ) {
+    const status = response.data.order_status;
+
+    if (status === "PAID") {
       const exists = await Purchase.findOne({ userId, movieId });
 
       if (!exists) {
         await Purchase.create({
           userId,
-          movieId,              // ✅ IMPORTANT (your schema usage)
+          movieId,
           paymentId: orderId,
           orderId,
           amount: movie.price,
-          status: "success"
+          status: "success",
         });
 
         await Movie.findByIdAndUpdate(movieId, {
-          $inc: { purchaseCount: 1 }
+          $inc: { purchaseCount: 1 },
         });
       }
 
@@ -439,20 +436,20 @@ app.post("/api/payment/order", auth, async (req, res) => {
 
     const request = {
       order_id: orderId,
-      order_amount: movie.price,
+      order_amount: Number(movie.price),
       order_currency: "INR",
       customer_details: {
         customer_id: user._id.toString(),
         customer_email: user.email,
-        customer_phone: "9999999999"
-      }
+        customer_phone: "9999999999",
+      },
     };
 
     const response = await Cashfree.PGCreateOrder(request);
 
     return res.json({
       payment_session_id: response.data.payment_session_id,
-      order_id: orderId
+      order_id: orderId,
     });
 
   } catch (err) {
