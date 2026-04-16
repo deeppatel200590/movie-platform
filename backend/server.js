@@ -430,6 +430,7 @@ app.post("/api/payment/verify", auth, async (req, res) => {
 app.post("/api/payment/order", auth, async (req, res) => {
   try {
     console.log("ORDER ROUTE HIT");
+
     const { movieId } = req.body;
 
     const movie = await Movie.findById(movieId);
@@ -451,7 +452,18 @@ app.post("/api/payment/order", auth, async (req, res) => {
       },
     };
 
-    const response = await Cashfree.PGCreateOrder(request);
+    const response = await axios.post(
+      "https://sandbox.cashfree.com/pg/orders",
+      request,
+      {
+        headers: {
+          "x-client-id": process.env.CASHFREE_APP_ID,
+          "x-client-secret": process.env.CASHFREE_SECRET_KEY,
+          "x-api-version": "2022-09-01",
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
     return res.json({
       payment_session_id: response.data.payment_session_id,
@@ -459,8 +471,8 @@ app.post("/api/payment/order", auth, async (req, res) => {
     });
 
   } catch (err) {
-  console.error("ORDER ERROR FULL:", err?.response?.data || err);
-  res.status(500).json({ message: "Order creation failed" });
+    console.error("ORDER ERROR FULL:", err.response?.data || err.message);
+    res.status(500).json({ message: "Order creation failed" });
   }
 });
 
