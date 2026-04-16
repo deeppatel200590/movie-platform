@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 
-console.log("CLIENT ID:", process.env.GOOGLE_CLIENT_ID);
+
 passport.use(
   new GoogleStrategy(
     {

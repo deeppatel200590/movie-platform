@@ -18,7 +18,7 @@ import { generateOTP } from "./model/otp.js";
 import { sendEmail } from "./model/sendEmail.js";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import r2 from "./model/r2.js";
-import { Cashfree } from "cashfree-pg";
+import { Cashfree, CFEnvironment } from "cashfree-pg";
 const app = express();
 
 app.use(session({
