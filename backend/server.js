@@ -459,8 +459,8 @@ app.post("/api/payment/order", auth, async (req, res) => {
     });
 
   } catch (err) {
-    console.error("ORDER ERROR:", err);
-    res.status(500).json({ message: "Order creation failed" });
+  console.error("ORDER ERROR FULL:", err?.response?.data || err);
+  res.status(500).json({ message: "Order creation failed" });
   }
 });
 
