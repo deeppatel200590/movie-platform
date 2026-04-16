@@ -24,7 +24,7 @@ const VerifyOtp = () => {
 
       alert(res.data.message);
 
-      navigate("/login");
+      navigate("/");
 
     } catch (error) {
       alert(error.response?.data?.message || "Verification failed");

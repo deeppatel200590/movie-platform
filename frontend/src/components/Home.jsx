@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 import axios from "axios";
-import { loadRazorpay } from "../utils/loadRazorpay";
+import { Cashfree } from "cashfree-dropjs";
 import { Search, Play, ShoppingCart, Clock, Flame } from "lucide-react";
 
 const Home = () => {
@@ -21,19 +20,18 @@ const Home = () => {
   const normalize = (str) =>
     str?.toLowerCase().replace(/[\s-]/g, "");
 
-  // ✅ FIXED SAFE DATE LOGIC
-const isUpcomingMovie = (movie) => {
-  if (!movie) return false;
+  // ✅ SAFE DATE CHECK
+  const isUpcomingMovie = (movie) => {
+    if (!movie) return false;
 
-  const releaseDate = movie.releaseDate || movie.release_date;
+    const releaseDate = movie.releaseDate || movie.release_date;
+    if (!releaseDate) return false;
 
-  if (!releaseDate) return false;
+    const releaseTime = new Date(releaseDate).getTime();
+    if (isNaN(releaseTime)) return false;
 
-  const releaseTime = new Date(releaseDate).getTime();
-  if (isNaN(releaseTime)) return false;
-
-  return movie.status === "coming" || releaseTime > Date.now();
-};
+    return movie.status === "coming" || releaseTime > Date.now();
+  };
 
   // FETCH MOVIES
   useEffect(() => {
@@ -41,14 +39,9 @@ const isUpcomingMovie = (movie) => {
       .then((res) => res.json())
       .then((data) => {
         setMovies(data);
-
-        const upcoming = data.filter((movie) =>
-          isUpcomingMovie(movie)
-        );
-
-        setUpcomingMovies(upcoming);
+        setUpcomingMovies(data.filter(isUpcomingMovie));
       })
-      .catch((err) => console.error(err));
+      .catch(console.error);
   }, []);
 
   // RECENT
@@ -80,65 +73,44 @@ const isUpcomingMovie = (movie) => {
     fetchPurchased();
   }, []);
 
-  // PAYMENT SUCCESS
-  const handlePaymentSuccess = async (response, movie) => {
+  // ✅ CASHFREE BUY FUNCTION (FIXED)
+  const handleBuy = async (movie) => {
     try {
       const token = localStorage.getItem("token");
-      const decoded = jwtDecode(token);
 
       const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/payment/success`,
+        `${import.meta.env.VITE_API_URL}/api/payment/order`,
+        { movieId: movie._id },
         {
-          userId: decoded.id,
-          movieId: movie._id,
-          razorpay_order_id: response.razorpay_order_id,
-          razorpay_payment_id: response.razorpay_payment_id,
-          razorpay_signature: response.razorpay_signature,
+          headers: { Authorization: `Bearer ${token}` }, // ✅ IMPORTANT
         }
       );
 
-      if (res.data.success) {
-        setPurchasedMovies((prev) => [...prev, movie._id]);
+      const { payment_session_id, order_id } = res.data;
+
+      if (!payment_session_id) {
+        alert("Session ID missing");
+        return;
       }
-    } catch {
-      alert("Error saving purchase");
+
+      const cashfree = new Cashfree({
+        mode: "sandbox", // change to production later
+      });
+
+      cashfree.checkout({
+        paymentSessionId: payment_session_id,
+        redirectTarget: "_self",
+      });
+
+      // OPTIONAL: after redirect you can verify
+      localStorage.setItem("lastOrderId", order_id);
+      localStorage.setItem("lastMovieId", movie._id);
+
+    } catch (err) {
+      console.error("PAYMENT ERROR:", err);
+      alert("Payment failed");
     }
   };
-
-  // BUY
-  const handleBuy = async (movie) => {
-  console.log("🔥 BUY CLICKED");
-
-  const loaded = await loadRazorpay();
-  if (!loaded || !window.Razorpay) return;
-
-  try {
-    const res = await axios.post(
-      `${import.meta.env.VITE_API_URL}/api/payment/order`,
-      {
-        movieId: movie._id,   // ✅ FIXED
-      }
-    );
-
-    console.log("💳 ORDER RESPONSE:", res.data);
-
-    const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-      amount: res.data.amount,
-      currency: "INR",
-      order_id: res.data.id,
-
-      handler: (response) =>
-        handlePaymentSuccess(response, movie),
-    };
-
-    new window.Razorpay(options).open();
-
-  } catch (err) {
-    console.error("❌ PAYMENT ERROR:", err);
-    alert("Payment failed");
-  }
-};
 
   // FILTER
   const filteredMovies = movies.filter((movie) => {
@@ -172,10 +144,7 @@ const isUpcomingMovie = (movie) => {
               ...recent.filter((m) => m._id !== movie._id),
             ].slice(0, 10);
 
-            localStorage.setItem(
-              "recentMovies",
-              JSON.stringify(recent)
-            );
+            localStorage.setItem("recentMovies", JSON.stringify(recent));
           }}
         >
           <div className="aspect-[2/3]">

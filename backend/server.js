@@ -18,6 +18,7 @@ import { generateOTP } from "./model/otp.js";
 import { sendEmail } from "./model/sendEmail.js";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import r2 from "./model/r2.js";
+import { Cashfree } from "cashfree-pg";
 const app = express();
 
 app.use(session({
@@ -48,6 +49,13 @@ console.log("ENV CHECK:", {
   clientId: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
 });
+
+
+
+Cashfree.XClientId = process.env.CASHFREE_APP_ID;
+Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
+Cashfree.XEnvironment = Cashfree.Environment.SANDBOX;
+
 
 const auth = (req, res, next) => {
   try {
@@ -121,10 +129,9 @@ app.post("/api/movies/upload",
 
       await r2.send(new PutObjectCommand({
         Bucket: process.env.R2_BUCKET_NAME,
-        Key: movieKey,
-        Body: movieFile.buffer,
-        ContentType: movieFile.mimetype,
-        ContentDisposition: "inline"   // 🔥 VERY IMPORTANT
+        Key: posterKey,   // ✅ correct
+        Body: posterFile.buffer,
+        ContentType: posterFile.mimetype,
       }));
 
       // 🔥 Upload Movie
@@ -312,72 +319,121 @@ app.delete("/api/movies/:id", auth, adminOnly, async (req, res) => {
   }
 });
 
-app.post("/api/payment/check", async (req, res) => {
+app.post("/api/payment/check", auth, async (req, res) => {
   try {
-    const { userId, movieId } = req.body;
+    const userId = req.user.id;
+    const { movieId } = req.body;
 
     const purchase = await Purchase.findOne({ userId, movieId });
 
-    if (purchase) {
-      res.json({ allowed: true });
-    } else {
-      res.json({ allowed: false });
-    }
+    res.json({ allowed: !!purchase });
 
   } catch {
     res.status(500).json({ allowed: false });
   }
 });
 
-app.post("/api/payment/success", async (req, res) => {
+// app.post("/api/payment/success", async (req, res) => {
+//   try {
+//     const {
+//       userId,
+//       movieId,
+//       razorpay_order_id,
+//       razorpay_payment_id,
+//       razorpay_signature
+//     } = req.body;
+
+//     const body = razorpay_order_id + "|" + razorpay_payment_id;
+
+//     const expectedSignature = crypto
+//       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+//       .update(body.toString())
+//       .digest("hex");
+
+//     if (expectedSignature !== razorpay_signature) {
+//       return res.status(400).json({ success: false, message: "Invalid payment" });
+//     }
+
+//     const exists = await Purchase.findOne({ userId, movieId });
+
+//     if (exists) {
+//       return res.json({ success: false, message: "Already purchased" });
+//     }
+
+//     await Purchase.create({
+//       userId,
+//       movieId,
+//       paymentId: razorpay_payment_id,
+//       status: "success"
+//     });
+
+//     await Movie.findByIdAndUpdate(movieId, {
+//       $inc: { purchaseCount: 1 }
+//     });
+
+//     res.json({
+//       success: true,
+//       message: "Payment verified"
+//     });
+
+//   } catch {
+//     res.status(500).json({ success: false });
+//   }
+// });
+
+app.post("/api/payment/verify", auth, async (req, res) => {
   try {
-    const {
-      userId,
-      movieId,
-      razorpay_order_id,
-      razorpay_payment_id,
-      razorpay_signature
-    } = req.body;
+    const { orderId, movieId } = req.body;
 
-    const body = razorpay_order_id + "|" + razorpay_payment_id;
-
-    const expectedSignature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(body.toString())
-      .digest("hex");
-
-    if (expectedSignature !== razorpay_signature) {
-      return res.status(400).json({ success: false, message: "Invalid payment" });
+    if (!orderId || !movieId) {
+      return res.status(400).json({ success: false });
     }
 
-    const exists = await Purchase.findOne({ userId, movieId });
+    const userId = req.user.id;
 
-    if (exists) {
-      return res.json({ success: false, message: "Already purchased" });
+    const response = await Cashfree.PGFetchOrder(orderId);
+
+    const movie = await Movie.findById(movieId);
+    if (!movie) {
+      return res.status(404).json({ success: false, message: "Movie not found" });
     }
 
-    await Purchase.create({
-      userId,
-      movieId,
-      paymentId: razorpay_payment_id,
-      status: "success"
-    });
+    // ✅ Secure verification
+    if (
+      response.data.order_status === "PAID" &&
+      Number(response.data.order_amount) === Number(movie.price)
+    ) {
 
-    await Movie.findByIdAndUpdate(movieId, {
-      $inc: { purchaseCount: 1 }
-    });
+      const exists = await Purchase.findOne({ userId, movieId });
 
-    res.json({
-      success: true,
-      message: "Payment verified"
-    });
+      if (!exists) {
+        await Purchase.create({
+          userId,
+          movieId,
+          paymentId: orderId,
+          orderId: orderId,
+          amount: movie.price,
+          status: "success"
+        });
 
-  } catch {
+        await Movie.findByIdAndUpdate(movieId, {
+          $inc: { purchaseCount: 1 }
+        });
+      }
+
+      return res.json({ success: true });
+    }
+
+    console.log("Payment failed or mismatch", response.data);
+    res.json({ success: false });
+
+  } catch (err) {
+    console.error("VERIFY ERROR:", err);
     res.status(500).json({ success: false });
   }
 });
 
-app.post("/api/payment/order", async (req, res) => {
+app.post("/api/payment/order", auth, async (req, res) => {
   try {
     const { movieId } = req.body;
 
@@ -386,23 +442,34 @@ app.post("/api/payment/order", async (req, res) => {
     }
 
     const movie = await Movie.findById(movieId);
-
     if (!movie) {
       return res.status(404).json({ message: "Movie not found" });
     }
 
-    const options = {
-      amount: movie.price * 100, // paise
-      currency: "INR",
-      receipt: `rcpt_${Date.now()}`
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const orderId = "order_" + Date.now();
+
+    const request = {
+      order_id: orderId,
+      order_amount: movie.price,
+      order_currency: "INR",
+
+      customer_details: {
+        customer_id: user._id.toString(),
+        customer_email: user.email
+        // ✅ phone NOT required
+      }
     };
 
-    const order = await razorpay.orders.create(options);
+    const response = await Cashfree.PGCreateOrder(request);
 
-    return res.json({
-      id: order.id,          // ✅ REQUIRED FOR FRONTEND
-      amount: order.amount,
-      currency: order.currency
+    res.json({
+      payment_session_id: response.data.payment_session_id,
+      order_id: orderId
     });
 
   } catch (err) {

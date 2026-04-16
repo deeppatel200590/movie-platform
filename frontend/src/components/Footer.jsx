@@ -10,7 +10,7 @@ const Footer = () => {
 
         {/* BRAND */}
         <div>
-          <h2 className="text-lg font-semibold mb-3">Verenya</h2>
+          <h2 className="text-lg font-semibold mb-3">Varenya</h2>
           <p className="text-gray-400">
             A digital platform providing entertainment services. 
             Enjoy seamless experience with secure payments.
