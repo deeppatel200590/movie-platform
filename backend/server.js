@@ -390,25 +390,28 @@ app.post("/api/payment/verify", auth, async (req, res) => {
 
     const userId = req.user.id;
 
-    const response = await Cashfree.PGFetchOrder(orderId);
+    const response = await cashfree.PGFetchOrder(orderId);
+
+    if (!response?.data) {
+      return res.status(500).json({ success: false });
+    }
 
     const movie = await Movie.findById(movieId);
     if (!movie) {
       return res.status(404).json({ success: false, message: "Movie not found" });
     }
 
-    // ✅ Secure verification
+    // ✅ STRICT PAYMENT CHECK
     if (
       response.data.order_status === "PAID" &&
       Number(response.data.order_amount) === Number(movie.price)
     ) {
-
       const exists = await Purchase.findOne({ userId, movieId });
 
       if (!exists) {
         await Purchase.create({
           userId,
-          movieId,
+          movieId,              // ✅ IMPORTANT (your DB tracking)
           paymentId: orderId,
           orderId: orderId,
           amount: movie.price,
@@ -423,12 +426,12 @@ app.post("/api/payment/verify", auth, async (req, res) => {
       return res.json({ success: true });
     }
 
-    console.log("Payment failed or mismatch", response.data);
-    res.json({ success: false });
+    console.log("Payment failed:", response.data);
+    return res.json({ success: false });
 
   } catch (err) {
     console.error("VERIFY ERROR:", err);
-    res.status(500).json({ success: false });
+    return res.status(500).json({ success: false });
   }
 });
 
@@ -450,30 +453,35 @@ app.post("/api/payment/order", auth, async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    const orderId = "order_" + Date.now();
+    const orderId = `order_${Date.now()}`;
 
     const request = {
       order_id: orderId,
-      order_amount: movie.price,
+      order_amount: Number(movie.price),
       order_currency: "INR",
-
       customer_details: {
         customer_id: user._id.toString(),
-        customer_email: user.email
-        // ✅ phone NOT required
+        customer_email: user.email,
+        customer_phone: "9999999999"
       }
     };
 
-    const response = await Cashfree.PGCreateOrder(request);
+    const response = await cashfree.PGCreateOrder(request);
 
-    res.json({
+    if (!response?.data?.payment_session_id) {
+      return res.status(500).json({
+        message: "Failed to create Cashfree order"
+      });
+    }
+
+    return res.json({
       payment_session_id: response.data.payment_session_id,
       order_id: orderId
     });
 
   } catch (err) {
     console.error("ORDER ERROR:", err);
-    res.status(500).json({ message: "Order creation failed" });
+    return res.status(500).json({ message: "Order creation failed" });
   }
 });
 
