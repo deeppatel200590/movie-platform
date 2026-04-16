@@ -18,7 +18,7 @@ import { generateOTP } from "./model/otp.js";
 import { sendEmail } from "./model/sendEmail.js";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import r2 from "./model/r2.js";
-import { Cashfree, CFEnvironment } from "cashfree-pg";
+import CashfreePG from "cashfree-pg";
 const app = express();
 
 app.use(session({
@@ -48,13 +48,14 @@ passport.deserializeUser(async (id, done) => {
 
 
 
-Cashfree.XClientId = process.env.CASHFREE_APP_ID;
-Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
-
-Cashfree.XEnvironment =
-  process.env.CASHFREE_ENV === "production"
-    ? CFEnvironment.PRODUCTION
-    : CFEnvironment.SANDBOX;
+const cashfree = new CashfreePG({
+  clientId: process.env.CASHFREE_APP_ID,
+  clientSecret: process.env.CASHFREE_SECRET_KEY,
+  env:
+    process.env.CASHFREE_ENV === "production"
+      ? "PRODUCTION"
+      : "SANDBOX",
+});
 
 
   app.use((req, res, next) => {
@@ -391,7 +392,7 @@ app.post("/api/payment/verify", auth, async (req, res) => {
     const { orderId, movieId } = req.body;
     const userId = req.user.id;
 
-    const response = await Cashfree.PGFetchOrder(orderId);
+   const response = await cashfree.getOrder(orderId);
 
     const movie = await Movie.findById(movieId);
     if (!movie) return res.status(404).json({ success: false });
@@ -451,7 +452,7 @@ app.post("/api/payment/order", auth, async (req, res) => {
       },
     };
 
-    const response = await Cashfree.PGCreateOrder(request);
+    const response = await cashfree.createOrder(request);
 
     return res.json({
       payment_session_id: response.data.payment_session_id,
