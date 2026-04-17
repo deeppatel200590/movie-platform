@@ -1,8 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Cashfree } from "cashfree-dropjs";
 import { Search, Play, ShoppingCart, Clock, Flame } from "lucide-react";
+import { load } from "cashfree-dropjs";
+
+/* ✅ SAFE SINGLETON CASHFREE */
+let cashfree;
+
+const getCashfree = () => {
+  if (!cashfree) {
+    cashfree = load({ mode: "sandbox" });
+  }
+  return cashfree;
+};
 
 const Home = () => {
   const navigate = useNavigate();
@@ -82,7 +92,7 @@ const Home = () => {
         `${import.meta.env.VITE_API_URL}/api/payment/order`,
         { movieId: movie._id },
         {
-          headers: { Authorization: `Bearer ${token}` }, // ✅ IMPORTANT
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -93,16 +103,13 @@ const Home = () => {
         return;
       }
 
-      const cashfree = new Cashfree({
-        mode: "sandbox", // change to production later
-      });
-
-      cashfree.checkout({
+      // ✅ FIXED CASHFREE CALL
+      getCashfree().checkout({
         paymentSessionId: payment_session_id,
         redirectTarget: "_self",
       });
 
-      // OPTIONAL: after redirect you can verify
+      // store order info
       localStorage.setItem("lastOrderId", order_id);
       localStorage.setItem("lastMovieId", movie._id);
 

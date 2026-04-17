@@ -18,7 +18,8 @@ import { generateOTP } from "./model/otp.js";
 import { sendEmail } from "./model/sendEmail.js";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import r2 from "./model/r2.js";
-import { Cashfree, CFEnvironment } from "cashfree-pg";
+import axios from "axios";
+// import { load } from "cashfree-dropjs";
 const app = express();
 
 app.use(session({
@@ -48,13 +49,13 @@ passport.deserializeUser(async (id, done) => {
 
 
 
-Cashfree.XClientId = process.env.CASHFREE_APP_ID;
-Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
+// Cashfree.XClientId = process.env.CASHFREE_APP_ID;
+// Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
 
-Cashfree.XEnvironment =
-  process.env.CASHFREE_ENV === "production"
-    ? CFEnvironment.PRODUCTION
-    : CFEnvironment.SANDBOX;
+// Cashfree.XEnvironment =
+//   process.env.CASHFREE_ENV === "production"
+//     ? CFEnvironment.PRODUCTION
+//     : CFEnvironment.SANDBOX;
 
 
   app.use((req, res, next) => {
@@ -391,14 +392,22 @@ app.post("/api/payment/verify", auth, async (req, res) => {
     const { orderId, movieId } = req.body;
     const userId = req.user.id;
 
-   const response = await Cashfree.PGFetchOrder(orderId);
-
-    const movie = await Movie.findById(movieId);
-    if (!movie) return res.status(404).json({ success: false });
+    const response = await axios.get(
+      `https://sandbox.cashfree.com/pg/orders/${orderId}`,
+      {
+        headers: {
+          "x-client-id": process.env.CASHFREE_APP_ID,
+          "x-client-secret": process.env.CASHFREE_SECRET_KEY,
+          "x-api-version": "2022-09-01",
+        },
+      }
+    );
 
     const status = response.data.order_status;
 
     if (status === "PAID") {
+      const movie = await Movie.findById(movieId);
+
       const exists = await Purchase.findOne({ userId, movieId });
 
       if (!exists) {
@@ -410,10 +419,6 @@ app.post("/api/payment/verify", auth, async (req, res) => {
           amount: movie.price,
           status: "success",
         });
-
-        await Movie.findByIdAndUpdate(movieId, {
-          $inc: { purchaseCount: 1 },
-        });
       }
 
       return res.json({ success: true });
@@ -422,7 +427,7 @@ app.post("/api/payment/verify", auth, async (req, res) => {
     return res.json({ success: false });
 
   } catch (err) {
-    console.error("VERIFY ERROR:", err);
+    console.error(err.response?.data || err.message);
     res.status(500).json({ success: false });
   }
 });
@@ -439,6 +444,7 @@ app.post("/api/payment/order", auth, async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    // STEP 1: create request FIRST (NO orderId yet)
     const orderId = "order_" + Date.now();
 
     const request = {
@@ -452,6 +458,7 @@ app.post("/api/payment/order", auth, async (req, res) => {
       },
     };
 
+    // STEP 2: send to Cashfree
     const response = await axios.post(
       "https://sandbox.cashfree.com/pg/orders",
       request,
