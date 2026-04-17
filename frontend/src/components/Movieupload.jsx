@@ -29,46 +29,67 @@ const Movieupload = () => {
   };
 
   const handleUpload = async () => {
-    const formData = new FormData();
+  try {
+    const token = localStorage.getItem("token");
 
-    const fixedDate = formatDate(releaseDate);
+    // 1. GET PRESIGNED URL FIRST
+    const uploadRes = await axios.post(
+      `${import.meta.env.VITE_API_URL}/api/movies/get-presigned-url`,
+      {
+        fileName: movie.name,
+        fileType: movie.type
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
+
+    const { uploadUrl, publicUrl } = uploadRes.data;
+
+    // 2. UPLOAD MOVIE DIRECTLY TO R2
+    await fetch(uploadUrl, {
+      method: "PUT",
+      body: movie,
+      headers: {
+        "Content-Type": movie.type
+      }
+    });
+
+    // 3. NOW SEND ONLY METADATA TO BACKEND
+    const formData = new FormData();
 
     formData.append("title", title);
     formData.append("category", category);
-    formData.append("poster", poster);
-    formData.append("movie", movie);
     formData.append("description", description);
     formData.append("hero", hero);
     formData.append("producer", producer);
-
-    // 🔥 IMPORTANT FIX HERE
-    formData.append("releaseDate", fixedDate);
-
+    formData.append("releaseDate", formatDate(releaseDate));
     formData.append("price", price);
 
-    try {
-      const token = localStorage.getItem("token");
+    formData.append("poster", poster);
+    formData.append("movieUrl", publicUrl); // ✅ IMPORTANT
 
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/api/movies/upload`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data"
-          }
+    const res = await axios.post(
+      `${import.meta.env.VITE_API_URL}/api/movies/upload`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data"
         }
-      );
+      }
+    );
 
-      console.log("✅ UPLOAD SUCCESS:", res.data);
-      alert("Movie Uploaded Successfully");
-      navigate("/admin");
+    alert("Movie Uploaded Successfully");
+    navigate("/admin");
 
-    } catch (error) {
-      console.log("❌ UPLOAD ERROR:", error.response?.data);
-      alert("Upload Failed");
-    }
-  };
+  } catch (error) {
+    console.log("❌ UPLOAD ERROR:", error);
+    alert("Upload Failed");
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-800 flex items-center justify-center mt-15">

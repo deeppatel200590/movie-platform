@@ -20,6 +20,7 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import r2 from "./model/r2.js";
 import axios from "axios";
 import { v4 as uuidv4 } from "uuid";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 // import { load } from "cashfree-dropjs";
 const app = express();
 
@@ -34,8 +35,15 @@ app.use(passport.session());
 
 
 app.use("/uploads", express.static("uploads"));
-app.use(cors());
+app.use(cors({
+  origin: "https://movie-platform-xi.vercel.app"
+}));
 app.use(express.json());
+
+app.use(express.json({ limit: "600mb" }));
+app.use(express.urlencoded({ limit: "600mb", extended: true }));
+
+app.use("/uploads", express.static("uploads"));
 
 connectDB();
 
@@ -118,70 +126,61 @@ app.get("/test-email", async (req, res) => {
   }
 });
 
-app.post("/api/movies/upload",
+app.post(
+  "/api/movies/upload",
   auth,
   adminOnly,
-  upload.fields([
-    { name: "poster", maxCount: 1 },
-    { name: "movie", maxCount: 1 }
-  ]),
+  upload.single("poster"),
   async (req, res) => {
     try {
+      // 1. Poster file from multer
+      const posterFile = req.file;
 
-      const posterFile = req.files.poster[0];
-      const movieFile = req.files.movie[0];
-
-      // 🔥 Upload Poster
-      const posterKey = `posters/${Date.now()}-${posterFile.originalname}`;
-
-      await r2.send(new PutObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME,
-        Key: posterKey,   // ✅ correct
-        Body: posterFile.buffer,
-        ContentType: posterFile.mimetype,
-      }));
-
-      // 🔥 Upload Movie
-      const movieKey = `movies/${Date.now()}-${movieFile.originalname}`;
-
-      await r2.send(new PutObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME,
-        Key: movieKey,
-        Body: movieFile.buffer,
-        ContentType: movieFile.mimetype,
-      }));
-
-      // ✅ Generate URLs
-      // ✅ Use PUBLIC R2 URL (IMPORTANT)
-      const posterUrl = `https://pub-b7ae3ac99fe042c2b66e569f1ba04c88.r2.dev/${posterKey}`;
-      const movieUrl = `https://pub-b7ae3ac99fe042c2b66e569f1ba04c88.r2.dev/${movieKey}`;
-      const releaseDate = new Date(req.body.releaseDate);
-      let status = "coming";
-
-      if (!isNaN(releaseDate.getTime()) && releaseDate <= new Date()) {
-        status = "released";
+      if (!posterFile) {
+        return res.status(400).json({ message: "Poster is required" });
       }
 
+      // 2. Upload poster to R2
+      const posterKey = `posters/${Date.now()}-${posterFile.originalname}`;
+
+      await r2.send(
+        new PutObjectCommand({
+          Bucket: process.env.R2_BUCKET_NAME,
+          Key: posterKey,
+          Body: posterFile.buffer,
+          ContentType: posterFile.mimetype,
+        })
+      );
+
+      const posterUrl = `https://pub-b7ae3ac99fe042c2b66e569f1ba04c88.r2.dev/${posterKey}`;
+
+      // 3. Create movie in DB (movie file already uploaded via presigned URL)
       const newMovie = new Movie({
         title: req.body.title,
         category: req.body.category,
         description: req.body.description,
         hero: req.body.hero,
-        price: Number(req.body.price),
-        releaseDate,
-        status,
         producer: req.body.producer,
+        price: Number(req.body.price),
+        releaseDate: new Date(req.body.releaseDate),
+
+        status:
+          new Date(req.body.releaseDate) <= new Date()
+            ? "released"
+            : "coming",
+
         poster: posterUrl,
-        movieUrl: movieUrl
+
+        // ✅ IMPORTANT: comes from frontend (R2 direct upload)
+        movieUrl: req.body.movieUrl,
       });
 
       await newMovie.save();
 
       res.json({
         message: "Upload successful",
-        movie: newMovie
+        movie: newMovie,
       });
-
     } catch (error) {
       console.log("UPLOAD ERROR:", error);
       res.status(500).json({ message: error.message });
@@ -555,6 +554,33 @@ app.get("/auth/google/callback",
     res.redirect(`https://movie-platform-xi.vercel.app/social-login?token=${token}`);
   }
 );
+
+app.post("/api/movies/get-presigned-url", auth, adminOnly, async (req, res) => {
+  try {
+    const { fileName, fileType } = req.body;
+    
+    // This creates the "path" where the movie will live in R2
+    const movieKey = `movies/${Date.now()}-${fileName}`;
+
+    const command = new PutObjectCommand({
+      Bucket: process.env.R2_BUCKET_NAME,
+      Key: movieKey,
+      ContentType: fileType,
+    });
+
+    // Generate the "magic link" - valid for 1 hour
+    // Even though it says 's3', it works for R2 because of your r2 client config
+    const uploadUrl = await getSignedUrl(r2, command, { expiresIn: 3600 });
+
+    res.json({
+      uploadUrl, // Frontend uses this to upload
+      publicUrl: `https://pub-b7ae3ac99fe042c2b66e569f1ba04c88.r2.dev/${movieKey}` // This goes in your DB
+    });
+  } catch (error) {
+    console.error("Presigned URL Error:", error);
+    res.status(500).json({ message: "Could not generate upload link" });
+  }
+});
 
 const PORT = process.env.PORT || 5000;
 
