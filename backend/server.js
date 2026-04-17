@@ -568,7 +568,7 @@ app.get("/auth/google/callback",
     );
 
     // redirect with token
-    res.redirect(`https://movie-platform-xi.vercel.app/social-login?token=${token}`);
+    res.redirect(`https://www.varenyafilms.com//social-login?token=${token}`);
   }
 );
 
