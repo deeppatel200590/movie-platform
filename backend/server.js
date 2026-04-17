@@ -36,8 +36,8 @@ app.use(passport.session());
 
 const allowedOrigins = [
   "https://movie-platform-xi.vercel.app",
-  "https://www.varenyafilms.com/", // Replace with your actual domain
-  "http://localhost:3000"           // Good for local testing
+  "https://www.varenyafilms.com",
+  "http://localhost:3000"
 ];
 
 app.use(cors({
