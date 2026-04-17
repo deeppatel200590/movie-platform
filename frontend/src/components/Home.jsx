@@ -2,17 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Search, Play, ShoppingCart, Clock, Flame } from "lucide-react";
-import { Cashfree } from "cashfree-dropjs";
-
-/* ✅ SAFE SINGLETON CASHFREE */
-let cashfreeInstance = null;
-
-const getCashfree = async () => {
-  if (!cashfreeInstance) {
-    cashfreeInstance = await load({ mode: "sandbox" });
-  }
-  return cashfreeInstance;
-};
 
 const Home = () => {
   const navigate = useNavigate();
@@ -30,7 +19,6 @@ const Home = () => {
   const normalize = (str) =>
     str?.toLowerCase().replace(/[\s-]/g, "");
 
-  // ✅ SAFE DATE CHECK
   const isUpcomingMovie = (movie) => {
     if (!movie) return false;
 
@@ -43,7 +31,6 @@ const Home = () => {
     return movie.status === "coming" || releaseTime > Date.now();
   };
 
-  // FETCH MOVIES
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/api/movies`)
       .then((res) => res.json())
@@ -54,13 +41,11 @@ const Home = () => {
       .catch(console.error);
   }, []);
 
-  // RECENT
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("recentMovies")) || [];
     setRecentMovies(stored);
   }, []);
 
-  // PURCHASED
   useEffect(() => {
     const fetchPurchased = async () => {
       try {
@@ -83,43 +68,71 @@ const Home = () => {
     fetchPurchased();
   }, []);
 
-  // ✅ CASHFREE BUY FUNCTION (FIXED)
-const handleBuy = async (movie) => {
+  // 🔥 FINAL CASHFREE FIX (ONLY CHANGE)
+ const handleBuy = async (movie) => {
   try {
     const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Please login first");
+      return;
+    }
 
     const res = await axios.post(
       `${import.meta.env.VITE_API_URL}/api/payment/order`,
       { movieId: movie._id },
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
+      { headers: { Authorization: `Bearer ${token}` } }
     );
 
     const { payment_session_id, order_id } = res.data;
 
     if (!payment_session_id) {
-      alert("Session ID missing");
+      alert("Server did not return a Session ID");
       return;
     }
 
-    const cf = new Cashfree({ mode: "sandbox" });
+    // Improved SDK loader
+    const getSDK = () => {
+      return new Promise((resolve, reject) => {
+        if (window.Cashfree) {
+          resolve(window.Cashfree);
+        } else {
+          let attempts = 0;
+          const interval = setInterval(() => {
+            attempts++;
+            if (window.Cashfree) {
+              clearInterval(interval);
+              resolve(window.Cashfree);
+            }
+            if (attempts > 30) { // 6 seconds total
+              clearInterval(interval);
+              reject("Cashfree SDK failed to load. Please refresh the page.");
+            }
+          }, 200);
+        }
+      });
+    };
 
-    cf.checkout({
+    const cashfree = await getSDK();
+
+    // INITIALIZE V3 Correctly
+    const cfInstance = cashfree({
+      mode: "sandbox", // Ensure this matches your backend environment
+    });
+
+    cfInstance.checkout({
       paymentSessionId: payment_session_id,
-      redirectTarget: "_self",
+      redirectTarget: "_self", 
     });
 
     localStorage.setItem("lastOrderId", order_id);
     localStorage.setItem("lastMovieId", movie._id);
 
   } catch (err) {
-    console.error("PAYMENT ERROR:", err.response?.data || err.message);
-    alert("Payment failed");
+    console.error("Payment Error:", err);
+    alert(err.response?.data?.message || "Payment initiation failed");
   }
 };
 
-  // FILTER
   const filteredMovies = movies.filter((movie) => {
     const matchesSearch = movie.title
       ?.toLowerCase()
@@ -132,7 +145,6 @@ const handleBuy = async (movie) => {
     return matchesSearch && matchesCategory;
   });
 
-  // MOVIE CARD
   const MovieCard = ({ movie }) => {
     const isUpcoming = isUpcomingMovie(movie);
     const isPurchased = purchasedMovies.includes(movie._id);
@@ -298,10 +310,6 @@ const handleBuy = async (movie) => {
           </div>
         </section>
       </div>
-
-      <style>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-      `}</style>
     </div>
   );
 };
