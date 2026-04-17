@@ -19,6 +19,7 @@ import { sendEmail } from "./model/sendEmail.js";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import r2 from "./model/r2.js";
 import axios from "axios";
+import { v4 as uuidv4 } from "uuid";
 // import { load } from "cashfree-dropjs";
 const app = express();
 
@@ -443,11 +444,12 @@ app.post("/api/payment/order", auth, async (req, res) => {
       return res.status(404).json({ message: "Not found" });
     }
 
-    const orderId = uuidv4(); // ✅ FIXED
+    // ✅ FIX: proper uuid
+    const orderId = uuidv4();
 
     const request = {
       order_id: orderId,
-      order_amount: Number(movie.price),
+      order_amount: Number(movie.price.toFixed ? movie.price.toFixed(2) : movie.price), // IMPORTANT FIX
       order_currency: "INR",
       customer_details: {
         customer_id: user._id.toString(),
@@ -475,7 +477,7 @@ app.post("/api/payment/order", auth, async (req, res) => {
     });
 
   } catch (err) {
-    console.error(err.response?.data || err.message);
+    console.error("CASHFREE ORDER ERROR:", err.response?.data || err.message);
     res.status(500).json({ message: "Order failed" });
   }
 });
