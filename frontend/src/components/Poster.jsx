@@ -11,34 +11,51 @@ const Poster = () => {
       .then((data) => setMovie(data));
   }, [id]);
 
-  if (!movie) return <h2 className="text-white">Loading...</h2>;
+  if (!movie) return <h2 className="text-white text-center mt-10">Loading...</h2>;
 
   return (
-    <div className="h-screen bg-black text-white overflow-hidden">
+    <div className="h-screen w-full relative overflow-hidden bg-black">
 
       <Link to={`/movie/${movie._id}`}>
-        <div className="relative w-full h-full">
+        
+        {/* Background Image */}
+        <img
+          src={movie.poster}
+          alt={movie.title}
+          className="w-full h-full object-cover scale-105 transition-transform duration-700 hover:scale-110"
+        />
 
-          {/* 🔥 FIXED IMAGE */}
-          <img
-            src={movie.poster}
-            className="w-full h-full object-cover"
-            alt={movie.title}
-          />
+        {/* Dark Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent"></div>
 
-          <div className="absolute bottom-0 p-6">
-            <h1 className="text-4xl font-bold">{movie.title}</h1>
+        {/* Content */}
+        <div className="absolute bottom-0 left-0 p-8 w-full md:w-[60%]">
 
-            <p className="mt-2">Category: {movie.category}</p>
-            <p>Hero: {movie.hero}</p>
-            <p>Producer: {movie.producer}</p>
+          {/* Glass Card */}
+          <div className="backdrop-blur-md bg-white/10 p-6 rounded-2xl shadow-xl border border-white/20">
 
-            <p className="mt-4 max-w-xl line-clamp-3">
+            <h1 className="text-4xl md:text-5xl font-bold mb-3">
+              {movie.title}
+            </h1>
+
+            <div className="flex flex-wrap gap-4 text-sm text-gray-300">
+              <span>🎬 {movie.category}</span>
+              <span>⭐ {movie.hero}</span>
+              <span>🎥 {movie.producer}</span>
+            </div>
+
+            <p className="mt-4 text-gray-200 leading-relaxed line-clamp-3">
               {movie.description}
             </p>
-          </div>
 
+            {/* Button */}
+            <button className="mt-6 px-6 py-2 bg-red-600 hover:bg-red-700 rounded-full font-semibold transition">
+              ▶ Watch Now
+            </button>
+
+          </div>
         </div>
+
       </Link>
     </div>
   );

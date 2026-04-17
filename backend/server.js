@@ -37,7 +37,7 @@ app.use(passport.session());
 const allowedOrigins = [
   "https://movie-platform-xi.vercel.app/",
   "https://www.varenyafilms.com",
-  "http://localhost:3000"
+  "http://localhost:5173"
 ];
 
 app.use(cors({
@@ -408,7 +408,7 @@ app.post("/api/payment/verify", auth, async (req, res) => {
     const userId = req.user.id;
 
     const response = await axios.get(
-      `https://api.cashfree.com/pg/orders/${orderId}`, // 3. CHANGE THIS TO 'api' (Live)
+      `https://api.cashfree.com/pg/orders/${orderId}`,
       {
         headers: {
           "x-client-id": process.env.CASHFREE_APP_ID,
@@ -421,25 +421,32 @@ app.post("/api/payment/verify", auth, async (req, res) => {
     const status = response.data.order_status;
 
     if (status === "PAID" || status === "SUCCESS") {
-      const movie = await Movie.findById(movieId);
       const exists = await Purchase.findOne({ userId, movieId });
 
       if (!exists) {
+        // 1. Save the purchase info
         await Purchase.create({
           userId,
           movieId,
           paymentId: orderId,
           orderId,
-          amount: movie.price,
           status: "success",
         });
+
+        // 🔥 2. INCREMENT THE COUNT (This is what you need)
+        // This finds the movie by ID and adds 1 to the 'purchaseCount' field
+        await Movie.findByIdAndUpdate(movieId, {
+          $inc: { purchaseCount: 1 }
+        });
+        
+        console.log("Success: Purchase count increased by 1");
       }
       return res.json({ success: true });
     }
 
-    return res.json({ success: false, message: `Status is ${status}` });
+    return res.json({ success: false });
   } catch (err) {
-    console.error("VERIFY ERROR:", err.response?.data || err.message);
+    console.error("VERIFY ERROR:", err);
     res.status(500).json({ success: false });
   }
 });
