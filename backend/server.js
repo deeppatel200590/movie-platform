@@ -434,18 +434,16 @@ app.post("/api/payment/verify", auth, async (req, res) => {
 
 app.post("/api/payment/order", auth, async (req, res) => {
   try {
-    console.log("ORDER ROUTE HIT");
-
     const { movieId } = req.body;
 
     const movie = await Movie.findById(movieId);
-    if (!movie) return res.status(404).json({ message: "Movie not found" });
-
     const user = await User.findById(req.user.id);
-    if (!user) return res.status(404).json({ message: "User not found" });
 
-    // STEP 1: create request FIRST (NO orderId yet)
-    const orderId = "order_" + Date.now();
+    if (!movie || !user) {
+      return res.status(404).json({ message: "Not found" });
+    }
+
+    const orderId = uuidv4(); // ✅ FIXED
 
     const request = {
       order_id: orderId,
@@ -458,7 +456,6 @@ app.post("/api/payment/order", auth, async (req, res) => {
       },
     };
 
-    // STEP 2: send to Cashfree
     const response = await axios.post(
       "https://sandbox.cashfree.com/pg/orders",
       request,
@@ -478,8 +475,8 @@ app.post("/api/payment/order", auth, async (req, res) => {
     });
 
   } catch (err) {
-    console.error("ORDER ERROR FULL:", err.response?.data || err.message);
-    res.status(500).json({ message: "Order creation failed" });
+    console.error(err.response?.data || err.message);
+    res.status(500).json({ message: "Order failed" });
   }
 });
 
