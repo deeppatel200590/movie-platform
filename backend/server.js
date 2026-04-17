@@ -448,15 +448,19 @@ app.post("/api/payment/order", auth, async (req, res) => {
     const orderId = uuidv4();
 
     const request = {
-      order_id: orderId,
-      order_amount: Number(movie.price.toFixed ? movie.price.toFixed(2) : movie.price), // IMPORTANT FIX
-      order_currency: "INR",
-      customer_details: {
-        customer_id: user._id.toString(),
-        customer_email: user.email,
-        customer_phone: "9999999999",
-      },
-    };
+  order_id: orderId,
+  order_amount: movie.price.toFixed(2).toString(),
+  order_currency: "INR",
+  customer_details: {
+    customer_id: user._id.toString(),
+    customer_email: user.email,
+    customer_phone: user.phone || "9999999999", // Ensure this isn't empty
+  },
+  order_meta: {
+    // Replace with your actual frontend URL
+    return_url: `https://movie-platform-xi.vercel.app/payment-verify?order_id={order_id}&movie_id=${movieId}`
+  }
+};
 
     const response = await axios.post(
       "https://sandbox.cashfree.com/pg/orders",

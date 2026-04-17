@@ -3,6 +3,31 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Search, Play, ShoppingCart, Clock, Flame } from "lucide-react";
 
+
+
+const getSDK = () => {
+  return new Promise((resolve, reject) => {
+    if (window.Cashfree) {
+      resolve(window.Cashfree);
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://sdk.cashfree.com/js/v3/cashfree.js";
+    script.async = true;
+    script.onload = () => {
+      if (window.Cashfree) {
+        resolve(window.Cashfree);
+      } else {
+        reject("Cashfree object not found after script load");
+      }
+    };
+    script.onerror = () => reject("Failed to download Cashfree SDK");
+    document.body.appendChild(script);
+  });
+};
+
+
+
 const Home = () => {
   const navigate = useNavigate();
 
@@ -90,33 +115,12 @@ const Home = () => {
       return;
     }
 
-    // Improved SDK loader
-    const getSDK = () => {
-      return new Promise((resolve, reject) => {
-        if (window.Cashfree) {
-          resolve(window.Cashfree);
-        } else {
-          let attempts = 0;
-          const interval = setInterval(() => {
-            attempts++;
-            if (window.Cashfree) {
-              clearInterval(interval);
-              resolve(window.Cashfree);
-            }
-            if (attempts > 30) { // 6 seconds total
-              clearInterval(interval);
-              reject("Cashfree SDK failed to load. Please refresh the page.");
-            }
-          }, 200);
-        }
-      });
-    };
+    // ✅ Use the getSDK function defined at the top of your file
+    const CashfreeSDK = await getSDK();
 
-    const cashfree = await getSDK();
-
-    // INITIALIZE V3 Correctly
-    const cfInstance = cashfree({
-      mode: "sandbox", // Ensure this matches your backend environment
+    // ✅ Initialize and open checkout
+    const cfInstance = CashfreeSDK({
+      mode: "sandbox", 
     });
 
     cfInstance.checkout({
