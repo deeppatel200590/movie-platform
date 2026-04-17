@@ -58,7 +58,13 @@ const PolicyPage = () => {
           means you accept the updated policy.
         </p>
 
-        <h2>7. Contact Us</h2>
+        <h2>7. Content Availability & Expiry</h2>
+        <p>
+          Please review the movie description associated with your purchase to check
+          the expiry date, after which the movie may be removed from the platform.
+        </p>
+
+        <h2>8. Contact Us</h2>
         <p>
           Email: <strong>vedsoniorignals@gmail.com</strong>
         </p>

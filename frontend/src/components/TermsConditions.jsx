@@ -76,7 +76,13 @@ const TermsConditions = () => {
           the platform means you accept the updated terms.
         </p>
 
-        <h2>10. Contact Us</h2>
+        <h2>10. Content Availability & Expiry</h2>
+        <p>
+          Please review the movie description associated with your purchase to check
+          the expiry date, after which the movie may be removed from the platform.
+        </p>
+
+        <h2>11. Contact Us</h2>
         <p>
           Email: <strong>vedsoniorignals@gmail.com</strong>
         </p>
