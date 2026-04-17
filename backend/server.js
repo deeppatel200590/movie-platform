@@ -408,7 +408,7 @@ app.post("/api/payment/verify", auth, async (req, res) => {
     const userId = req.user.id;
 
     const response = await axios.get(
-      `https://sandbox.cashfree.com/pg/orders/${orderId}`,
+      `https://api.cashfree.com/pg/orders/${orderId}`, // 3. CHANGE THIS TO 'api' (Live)
       {
         headers: {
           "x-client-id": process.env.CASHFREE_APP_ID,
@@ -419,23 +419,20 @@ app.post("/api/payment/verify", auth, async (req, res) => {
     );
 
     const status = response.data.order_status;
-    console.log("CASHFREE STATUS:", status); // Check your terminal to see what this says!
 
-    // ✅ Fix: Allow "PAID" or "SUCCESS"
     if (status === "PAID" || status === "SUCCESS") {
       const movie = await Movie.findById(movieId);
       const exists = await Purchase.findOne({ userId, movieId });
 
       if (!exists) {
-        const newPurchase = await Purchase.create({
+        await Purchase.create({
           userId,
           movieId,
-          paymentId: orderId, // Or response.data.cf_order_id
+          paymentId: orderId,
           orderId,
           amount: movie.price,
           status: "success",
         });
-        console.log("PURCHASE SAVED:", newPurchase);
       }
       return res.json({ success: true });
     }
@@ -450,7 +447,6 @@ app.post("/api/payment/verify", auth, async (req, res) => {
 app.post("/api/payment/order", auth, async (req, res) => {
   try {
     const { movieId } = req.body;
-
     const movie = await Movie.findById(movieId);
     const user = await User.findById(req.user.id);
 
@@ -458,31 +454,30 @@ app.post("/api/payment/order", auth, async (req, res) => {
       return res.status(404).json({ message: "Not found" });
     }
 
-    // ✅ FIX: proper uuid
     const orderId = uuidv4();
 
     const request = {
-  order_id: orderId,
-  order_amount: movie.price.toFixed(2).toString(),
-  order_currency: "INR",
-  customer_details: {
-    customer_id: user._id.toString(),
-    customer_email: user.email,
-    customer_phone: user.phone || "9999999999", // Ensure this isn't empty
-  },
-  order_meta: {
-    // Replace with your actual frontend URL
-    return_url: `https://movie-platform-xi.vercel.app/payment-verify?order_id={order_id}&movie_id=${movieId}`
-  }
-};
+      order_id: orderId,
+      order_amount: movie.price.toFixed(2).toString(),
+      order_currency: "INR",
+      customer_details: {
+        customer_id: user._id.toString(),
+        customer_email: user.email,
+        customer_phone: user.phone || "9999999999", 
+      },
+      order_meta: {
+        // 1. ENSURE THIS IS YOUR LIVE DOMAIN
+        return_url: `https://www.varenyafilms.com/payment-verify?order_id={order_id}&movie_id=${movieId}`
+      }
+    };
 
     const response = await axios.post(
-      "https://sandbox.cashfree.com/pg/orders",
+      "https://api.cashfree.com/pg/orders", // 2. CHANGE THIS TO 'api' (Live)
       request,
       {
         headers: {
-          "x-client-id": process.env.CASHFREE_APP_ID,
-          "x-client-secret": process.env.CASHFREE_SECRET_KEY,
+          "x-client-id": process.env.CASHFREE_APP_ID,     // Ensure .env has LIVE ID
+          "x-client-secret": process.env.CASHFREE_SECRET_KEY, // Ensure .env has LIVE Secret
           "x-api-version": "2022-09-01",
           "Content-Type": "application/json",
         },
