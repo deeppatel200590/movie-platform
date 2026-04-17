@@ -20,7 +20,7 @@ import Footer from "./components/Footer"; // ✅ added
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 import VerifyOtp from "./components/VerifyOtp";
-import PaymentSuccess from "./components/PaymentSuccess";
+import PaymentVerify from "./components/PaymentVerify";
 
 // 👉 ADD THESE if you created them
 import TermsConditions from "./components/TermsConditions";
@@ -35,7 +35,7 @@ const App = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       <Route path="/social-login" element={<SocialLogin />} />
-      <Route path="/payment-success" element={<PaymentSuccess />} />
+      <Route path="/payment-verify" element={<PaymentVerify />} />
 
       {/* USER ROUTES */}
       <Route path="/verify-otp" element={<VerifyOtp />} />

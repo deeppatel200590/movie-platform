@@ -405,30 +405,30 @@ app.post("/api/payment/verify", auth, async (req, res) => {
     );
 
     const status = response.data.order_status;
+    console.log("CASHFREE STATUS:", status); // Check your terminal to see what this says!
 
-    if (status === "PAID") {
+    // ✅ Fix: Allow "PAID" or "SUCCESS"
+    if (status === "PAID" || status === "SUCCESS") {
       const movie = await Movie.findById(movieId);
-
       const exists = await Purchase.findOne({ userId, movieId });
 
       if (!exists) {
-        await Purchase.create({
+        const newPurchase = await Purchase.create({
           userId,
           movieId,
-          paymentId: orderId,
+          paymentId: orderId, // Or response.data.cf_order_id
           orderId,
           amount: movie.price,
           status: "success",
         });
+        console.log("PURCHASE SAVED:", newPurchase);
       }
-
       return res.json({ success: true });
     }
 
-    return res.json({ success: false });
-
+    return res.json({ success: false, message: `Status is ${status}` });
   } catch (err) {
-    console.error(err.response?.data || err.message);
+    console.error("VERIFY ERROR:", err.response?.data || err.message);
     res.status(500).json({ success: false });
   }
 });
