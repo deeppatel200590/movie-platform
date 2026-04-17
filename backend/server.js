@@ -35,7 +35,7 @@ app.use(passport.session());
 
 
 const allowedOrigins = [
-  "https://movie-platform-xi.vercel.app",
+  "https://movie-platform-xi.vercel.app/",
   "https://www.varenyafilms.com",
   "http://localhost:3000"
 ];

@@ -120,7 +120,7 @@ const Home = () => {
 
     // ✅ Initialize and open checkout
     const cfInstance = CashfreeSDK({
-      mode: "sandbox", 
+      mode: "production", 
     });
 
     cfInstance.checkout({
