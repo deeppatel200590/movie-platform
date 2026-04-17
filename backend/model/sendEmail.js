@@ -7,7 +7,7 @@ export const sendEmail = async (email, otp) => {
       {
         sender: {
           name: "Movie App",
-          email: "vedsoniorignals@gmail.com"
+          email: "deepadroja09@gmail.com"
         },
         to: [{ email }],
         subject: "Your OTP Code",
