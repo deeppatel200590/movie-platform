@@ -34,9 +34,24 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 
-app.use("/uploads", express.static("uploads"));
+const allowedOrigins = [
+  "https://movie-platform-xi.vercel.app",
+  "https://your-custom-domain.com", // Replace with your actual domain
+  "http://localhost:3000"           // Good for local testing
+];
+
 app.use(cors({
-  origin: "https://movie-platform-xi.vercel.app"
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  credentials: true
 }));
 app.use(express.json());
 
