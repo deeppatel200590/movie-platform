@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Search, Play, ShoppingCart, Clock, Flame } from "lucide-react";
-import { load } from "cashfree-dropjs";
+import { Cashfree } from "cashfree-dropjs";
 
 /* ✅ SAFE SINGLETON CASHFREE */
 let cashfreeInstance = null;
@@ -84,7 +84,7 @@ const Home = () => {
   }, []);
 
   // ✅ CASHFREE BUY FUNCTION (FIXED)
- const handleBuy = async (movie) => {
+const handleBuy = async (movie) => {
   try {
     const token = localStorage.getItem("token");
 
@@ -103,12 +103,12 @@ const Home = () => {
       return;
     }
 
-      const cf = await getCashfree();
+    const cf = new Cashfree({ mode: "sandbox" });
 
-  await cf.checkout({
-    paymentSessionId: payment_session_id,
-    redirectTarget: "_self",
-  });
+    cf.checkout({
+      paymentSessionId: payment_session_id,
+      redirectTarget: "_self",
+    });
 
     localStorage.setItem("lastOrderId", order_id);
     localStorage.setItem("lastMovieId", movie._id);
