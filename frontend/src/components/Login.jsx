@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";   // ✅ ADD THIS
-import logo from "../assets/varenyalogo.png";
+import logo from "../assets/murlidharlogo.png";
 
 const Login = () => {
   const navigate = useNavigate();

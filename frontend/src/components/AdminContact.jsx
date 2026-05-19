@@ -3,11 +3,22 @@ import React, { useEffect, useState } from "react";
 const AdminContact = () => {
   const [messages, setMessages] = useState([]);
 
-  // Fetch messages
+  // ✅ Fetch messages
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/api/contact`)
       .then((res) => res.json())
-      .then((data) => setMessages(data))
+      .then((data) => {
+        console.log("API RESPONSE:", data);
+
+        // ✅ FIX: ensure array
+        if (Array.isArray(data)) {
+          setMessages(data);
+        } else if (data.messages) {
+          setMessages(data.messages);
+        } else {
+          setMessages([]);
+        }
+      })
       .catch((err) => console.log(err));
   }, []);
 
@@ -16,29 +27,28 @@ const AdminContact = () => {
     if (!window.confirm("Delete this message?")) return;
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/contact/${id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/contact/${id}`,
+        {
+          method: "DELETE",
+        }
+      );
 
       const data = await res.json();
 
       if (data.success) {
-        setMessages(messages.filter((m) => m._id !== id));
+        setMessages((prev) => prev.filter((m) => m._id !== id));
       }
-    } catch {
+    } catch (error) {
       alert("Error deleting");
     }
   };
 
   return (
     <div className="pt-20 p-6 bg-gray-100 min-h-screen">
-
-      <h1 className="text-2xl font-bold mb-6">
-        📩 Contact Messages
-      </h1>
+      <h1 className="text-2xl font-bold mb-6">📩 Contact Messages</h1>
 
       <div className="space-y-4">
-
         {messages.length === 0 ? (
           <p>No messages found</p>
         ) : (
@@ -47,34 +57,29 @@ const AdminContact = () => {
               key={msg._id}
               className="bg-white p-4 rounded-lg shadow"
             >
-              <h2 className="font-semibold text-lg">
-                {msg.name}
-              </h2>
+              <h2 className="font-semibold text-lg">{msg.name}</h2>
 
-              <p className="text-sm text-gray-500">
-                {msg.email}
-              </p>
+              <p className="text-sm text-gray-500">{msg.email}</p>
 
-              <p className="mt-2 text-gray-700">
-                {msg.message}
-              </p>
+              <p className="mt-2 text-gray-700">{msg.message}</p>
 
               <p className="text-xs text-gray-400 mt-2">
-                {new Date(msg.createdAt).toLocaleString()}
+                {msg.createdAt
+                  ? new Date(msg.createdAt).toLocaleString()
+                  : "No date"}
               </p>
 
-              {/* ✅ DELETE BUTTON */}
+              {/* ✅ FIXED BUTTON */}
               <button
+                type="button"
                 onClick={() => handleDelete(msg._id)}
                 className="mt-3 bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600 transition"
               >
                 Delete
               </button>
-
             </div>
           ))
         )}
-
       </div>
     </div>
   );

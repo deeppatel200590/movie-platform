@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import logo from "../assets/varenyalogo.png";
+import logo from "../assets/murlidharlogo.png";
 import { Link, useNavigate } from "react-router-dom";
 
 const Signup = () => {
