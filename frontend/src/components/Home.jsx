@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Search, Play, ShoppingCart, Clock, Flame } from "lucide-react";
-
+import logo from "../assets/background.png";
 
 
 const getSDK = () => {
@@ -225,7 +225,7 @@ const Home = () => {
       <div className="relative h-[60vh] flex items-end px-6 md:px-12 pb-12 mb-8">
         <div className="absolute inset-0 mb-5">
           <img
-            src="https://pub-b7ae3ac99fe042c2b66e569f1ba04c88.r2.dev/AD0B81B1-C8C7-4D83-B37B-2A5233E55F78.png"
+            src="logo"
             className="w-full h-full object-cover"
           />
         </div>
