@@ -43,7 +43,7 @@ const AdminNavbar = () => {
 
       {/* MOBILE MENU */}
       {open && (
-        <div className="absolute top-[70px] left-0 w-full bg-[#242624] flex flex-col items-center gap-4 py-5 md:hidden">
+        <div className="absolute top-[70px] left-0 w-full bg-[#fbfffb] flex flex-col items-center gap-4 py-5 md:hidden">
 
           <Link
             to="/upload"
