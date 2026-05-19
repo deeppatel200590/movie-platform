@@ -35,8 +35,8 @@ app.use(passport.session());
 
 
 const allowedOrigins = [
-  "https://movie-platform-xi.vercel.app/",
-  "https://www.varenyafilms.com",
+  "https://movie-platform-xi.vercel.app",
+  "https://www.murlidharmotionpictures.in",
   "http://localhost:5173"
 ];
 
@@ -474,7 +474,7 @@ app.post("/api/payment/order", auth, async (req, res) => {
       },
       order_meta: {
         // 1. ENSURE THIS IS YOUR LIVE DOMAIN
-        return_url: `https://www.varenyafilms.com/payment-verify?order_id={order_id}&movie_id=${movieId}`
+        return_url: `https://www.murlidharmotionpictures.in/payment-verify?order_id={order_id}&movie_id=${movieId}`
       }
     };
 
@@ -568,7 +568,7 @@ app.get("/auth/google/callback",
     );
 
     // redirect with token
-    res.redirect(`https://www.varenyafilms.com//social-login?token=${token}`);
+    res.redirect(`https://www.murlidharmotionpictures.in//social-login?token=${token}`);
   }
 );
 

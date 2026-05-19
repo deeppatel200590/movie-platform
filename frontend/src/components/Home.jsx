@@ -222,7 +222,7 @@ const Home = () => {
     <div className="bg-white min-h-screen text-gray-100 pb-20">
 
       {/* HERO */}
-      <div className="relative h-[60vh] flex items-end px-6 md:px-12 pb-12 mb-8">
+      <div className="relative h-[80vh] flex items-end px-6 md:px-12 pb-12 mb-8">
         <div className="absolute inset-0 mb-5">
           <img
             src={logo}
@@ -231,9 +231,9 @@ const Home = () => {
         </div>
 
         <div className="relative z-10">
-          <h1 className="text-4xl md:text-6xl font-black mb-4">
+          {/* <h1 className="text-4xl md:text-6xl font-black mb-4">
             ENJOY THE <span className="text-blue-500">MOVIES</span>
-          </h1>
+          </h1> */}
 
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
