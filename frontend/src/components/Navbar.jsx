@@ -40,7 +40,7 @@ const Navbar = () => {
 
       {/* MOBILE MENU */}
       {open && (
-        <div className="absolute top-[70px] left-0 w-full bg-[#242624] text-black flex flex-col items-center gap-4 py-5 md:hidden">
+        <div className="absolute top-[70px] left-0 w-full bg-[#ffffff] text-black flex flex-col items-center gap-4 py-5 md:hidden">
 
           <Link to="/home" onClick={() => setOpen(false)}>
             Home
