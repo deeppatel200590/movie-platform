@@ -225,7 +225,7 @@ const Home = () => {
       <div className="relative h-[60vh] flex items-end px-6 md:px-12 pb-12 mb-8">
         <div className="absolute inset-0 mb-5">
           <img
-            src="logo"
+            src={logo}
             className="w-full h-full object-cover"
           />
         </div>
