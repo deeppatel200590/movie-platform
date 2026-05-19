@@ -20,7 +20,7 @@ const Navbar = () => {
       </div>
 
       {/* DESKTOP MENU */}
-      <div className="hidden md:flex gap-6 items-center text-white">
+      <div className="hidden md:flex gap-6 items-center text-black">
         <Link to="/home" className="hover:text-gray-300">Home</Link>
         <Link to="/about" className="hover:text-gray-300">About</Link>
         <Link to="/contact" className="hover:text-gray-300">Contact</Link>
@@ -40,7 +40,7 @@ const Navbar = () => {
 
       {/* MOBILE MENU */}
       {open && (
-        <div className="absolute top-[70px] left-0 w-full bg-[#242624] text-white flex flex-col items-center gap-4 py-5 md:hidden">
+        <div className="absolute top-[70px] left-0 w-full bg-[#242624] text-black flex flex-col items-center gap-4 py-5 md:hidden">
 
           <Link to="/home" onClick={() => setOpen(false)}>
             Home
