@@ -111,6 +111,10 @@ const auth = (req, res, next) => {
   }
 };
 
+app.get("/", (req, res) => {
+    res.send("Server is running 🚀");
+});
+
 const adminOnly = (req, res, next) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Admins only" });
