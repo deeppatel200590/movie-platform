@@ -34,7 +34,7 @@ const Navbar = () => {
       </div>
 
       {/* MOBILE BUTTON */}
-      <div className="md:hidden text-white text-2xl cursor-pointer">
+      <div className="md:hidden text-black text-2xl cursor-pointer">
         <button onClick={() => setOpen(!open)}>☰</button>
       </div>
 
