@@ -28,36 +28,57 @@ const Movieupload = () => {
     return date.toISOString();
   };
 
-  const handleUpload = async () => {
+ const handleUpload = async () => {
   try {
     const token = localStorage.getItem("token");
 
-    // 1. GET PRESIGNED URL FIRST
+    // Check if movie is selected
+    if (!movie) {
+      alert("Please select a movie file.");
+      return;
+    }
+
+    console.log("Movie Size:", movie.size);
+    console.log("Movie Type:", movie.type);
+
+    // 1. GET PRESIGNED URL
     const uploadRes = await axios.post(
       `${import.meta.env.VITE_API_URL}/api/movies/get-presigned-url`,
       {
         fileName: movie.name,
-        fileType: movie.type
+        fileType: movie.type,
       },
       {
         headers: {
-          Authorization: `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
 
     const { uploadUrl, publicUrl } = uploadRes.data;
 
-    // 2. UPLOAD MOVIE DIRECTLY TO R2
-    await fetch(uploadUrl, {
+    console.log("Uploading to R2...");
+
+    // 2. UPLOAD TO R2
+    const uploadResponse = await fetch(uploadUrl, {
       method: "PUT",
       body: movie,
       headers: {
-        "Content-Type": movie.type
-      }
+        "Content-Type": movie.type,
+      },
     });
 
-    // 3. NOW SEND ONLY METADATA TO BACKEND
+    console.log("R2 Status:", uploadResponse.status);
+
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      console.log("R2 Error:", errorText);
+      throw new Error(`R2 Upload Failed (${uploadResponse.status})`);
+    }
+
+    console.log("Movie uploaded successfully to R2");
+
+    // 3. SEND METADATA
     const formData = new FormData();
 
     formData.append("title", title);
@@ -67,18 +88,17 @@ const Movieupload = () => {
     formData.append("producer", producer);
     formData.append("releaseDate", formatDate(releaseDate));
     formData.append("price", price);
-
     formData.append("poster", poster);
-    formData.append("movieUrl", publicUrl); // ✅ IMPORTANT
+    formData.append("movieUrl", publicUrl);
 
-    const res = await axios.post(
+    await axios.post(
       `${import.meta.env.VITE_API_URL}/api/movies/upload`,
       formData,
       {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data"
-        }
+          "Content-Type": "multipart/form-data",
+        },
       }
     );
 
@@ -86,8 +106,14 @@ const Movieupload = () => {
     navigate("/admin");
 
   } catch (error) {
-    console.log("❌ UPLOAD ERROR:", error);
-    alert("Upload Failed");
+    console.error("UPLOAD ERROR:", error);
+
+    if (error.response) {
+      console.log("Status:", error.response.status);
+      console.log("Response:", error.response.data);
+    }
+
+    alert(error.message);
   }
 };
 
