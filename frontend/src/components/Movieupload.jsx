@@ -56,7 +56,7 @@ const Movieupload = () => {
     );
 
     const { uploadUrl, publicUrl } = uploadRes.data;
-
+    alert("Step 1: Got presigned URL");
     console.log("Uploading to R2...");
 
     // 2. UPLOAD TO R2
@@ -90,7 +90,7 @@ const Movieupload = () => {
     formData.append("price", price);
     formData.append("poster", poster);
     formData.append("movieUrl", publicUrl);
-
+    alert("Step 3: Sending movie details to server");
     await axios.post(
       `${import.meta.env.VITE_API_URL}/api/movies/upload`,
       formData,
@@ -105,15 +105,22 @@ const Movieupload = () => {
     alert("Movie Uploaded Successfully");
     navigate("/admin");
 
-  } catch (error) {
+    } catch (error) {
     console.error("UPLOAD ERROR:", error);
 
+    let message = "Unknown error";
+
     if (error.response) {
-      console.log("Status:", error.response.status);
-      console.log("Response:", error.response.data);
+      message =
+        "Status: " +
+        error.response.status +
+        "\nResponse: " +
+        JSON.stringify(error.response.data);
+    } else if (error.message) {
+      message = error.message;
     }
 
-    alert(error.message);
+    alert(message);
   }
 };
 
