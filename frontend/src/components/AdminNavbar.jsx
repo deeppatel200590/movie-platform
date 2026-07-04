@@ -5,7 +5,7 @@ const AdminNavbar = () => {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="h-[70px] flex justify-between items-center bg-[#fefffe] fixed top-0 left-0 w-full z-50 px-5 shadow-md text-white">
+    <div className="h-[70px] flex justify-between items-center text-black fixed top-0 left-0 w-full z-50 px-5 shadow-md text-white">
 
       {/* LOGO / TITLE */}
       <h1 className="text-lg font-semibold">Admin Panel</h1>
@@ -43,7 +43,7 @@ const AdminNavbar = () => {
 
       {/* MOBILE MENU */}
       {open && (
-        <div className="absolute top-[70px] left-0 w-full bg-[#fbfffb] flex flex-col items-center gap-4 py-5 md:hidden">
+        <div className="absolute top-[70px] left-0 w-full text-gray-800 flex flex-col items-center gap-4 py-5 md:hidden">
 
           <Link
             to="/upload"
