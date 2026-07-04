@@ -5,7 +5,7 @@ const AdminNavbar = () => {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="h-[70px] flex justify-between items-center text-black fixed top-0 left-0 w-full z-50 px-5 shadow-md text-white">
+    <div className="h-[70px] flex justify-between items-center bg-black fixed top-0 left-0 w-full z-50 px-5 shadow-md text-white">
 
       {/* LOGO / TITLE */}
       <h1 className="text-lg font-semibold">Admin Panel</h1>
@@ -43,12 +43,11 @@ const AdminNavbar = () => {
 
       {/* MOBILE MENU */}
       {open && (
-        <div className="absolute top-[70px] left-0 w-full text-gray-800 flex flex-col items-center gap-4 py-5 md:hidden">
-
+        <div className="absolute top-[70px] left-0 w-full bg-black text-white flex flex-col items-center gap-4 py-5 md:hidden">
           <Link
             to="/upload"
             onClick={() => setOpen(false)}
-            className="hover:text-gray-300"
+            className="text-white hover:text-gray-400 transition"
           >
             Upload
           </Link>
@@ -56,7 +55,7 @@ const AdminNavbar = () => {
           <Link
             to="/admin/contact"
             onClick={() => setOpen(false)}
-            className="hover:text-gray-300"
+            className="text-white hover:text-gray-400 transition"
           >
             Messages
           </Link>
@@ -64,7 +63,7 @@ const AdminNavbar = () => {
           <Link
             to="/admin"
             onClick={() => setOpen(false)}
-            className="hover:text-gray-300"
+            className="text-white hover:text-gray-400 transition"
           >
             Home
           </Link>
