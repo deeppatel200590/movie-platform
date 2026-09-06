@@ -478,7 +478,6 @@ app.post("/api/payment/check", auth, async (req, res) => {
 //     res.status(500).json({ success: false });
 //   }
 // });
-
 app.post("/api/payment/verify", auth, async (req, res) => {
   try {
     const { orderId, movieId } = req.body;
@@ -510,8 +509,7 @@ app.post("/api/payment/verify", auth, async (req, res) => {
           status: "success",
         });
 
-        // 🔥 2. INCREMENT THE COUNT (This is what you need)
-        // This finds the movie by ID and adds 1 to the 'purchaseCount' field
+        // 2. INCREMENT THE COUNT
         await Movie.findByIdAndUpdate(movieId, {
           $inc: { purchaseCount: 1 }
         });
@@ -527,6 +525,7 @@ app.post("/api/payment/verify", auth, async (req, res) => {
     res.status(500).json({ success: false });
   }
 });
+
 
 app.post("/api/payment/order", auth, async (req, res) => {
   try {
