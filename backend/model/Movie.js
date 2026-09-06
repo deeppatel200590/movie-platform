@@ -22,11 +22,6 @@ const movieSchema = new mongoose.Schema({
 
   movieUrl: String,
 
-  // When users can start pre-buying
-  preBuyDate: {
-    type: Date
-  },
-
   // Official movie release date
   releaseDate: {
     type: Date

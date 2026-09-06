@@ -3,7 +3,6 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 const Movieupload = () => {
-
   const navigate = useNavigate();
 
   const [title, setTitle] = useState("");
@@ -13,9 +12,6 @@ const Movieupload = () => {
   const [description, setDescription] = useState("");
   const [hero, setHero] = useState("");
   const [producer, setProducer] = useState("");
-
-  // NEW: Pre-Buy Date
-  const [preBuyDate, setPreBuyDate] = useState("");
 
   // Official release date
   const [releaseDate, setReleaseDate] = useState("");
@@ -50,21 +46,9 @@ const Movieupload = () => {
         return;
       }
 
-      // Check Pre-Buy Date
-      if (!preBuyDate) {
-        alert("Please select Pre-Buy Date.");
-        return;
-      }
-
-      // Check Release Date
+      // Check release date
       if (!releaseDate) {
-        alert("Please select Release Date.");
-        return;
-      }
-
-      // Make sure Pre-Buy Date is before Release Date
-      if (new Date(preBuyDate) >= new Date(releaseDate)) {
-        alert("Pre-Buy Date must be before Release Date.");
+        alert("Please select Official Release Date.");
         return;
       }
 
@@ -132,13 +116,7 @@ const Movieupload = () => {
       formData.append("hero", hero);
       formData.append("producer", producer);
 
-      // NEW
-      formData.append(
-        "preBuyDate",
-        formatDate(preBuyDate)
-      );
-
-      // Existing release date
+      // Official release date
       formData.append(
         "releaseDate",
         formatDate(releaseDate)
@@ -166,23 +144,18 @@ const Movieupload = () => {
       navigate("/admin");
 
     } catch (error) {
-
       console.error("UPLOAD ERROR:", error);
 
       let message = "Unknown error";
 
       if (error.response) {
-
         message =
           "Status: " +
           error.response.status +
           "\nResponse: " +
           JSON.stringify(error.response.data);
-
       } else if (error.message) {
-
         message = error.message;
-
       }
 
       alert(message);
@@ -230,19 +203,7 @@ const Movieupload = () => {
           onChange={(e) => setHero(e.target.value)}
         />
 
-        {/* Pre-Buy Date */}
-        <label className="block mb-1 text-sm">
-          Pre-Buy Date
-        </label>
-
-        <input
-          type="datetime-local"
-          className="w-full p-2 mb-4 bg-gray-800 rounded"
-          value={preBuyDate}
-          onChange={(e) => setPreBuyDate(e.target.value)}
-        />
-
-        {/* Release Date */}
+        {/* Official Release Date */}
         <label className="block mb-1 text-sm">
           Official Release Date
         </label>
