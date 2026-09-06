@@ -45,7 +45,11 @@ const Home = () => {
     str?.toLowerCase().replace(/[\s-]/g, "");
 
 const isBeforePreBuy = (movie) => {
-  if (!movie?.preBuyDate) return true;
+  const isBeforePreBuy = (movie) => {
+  if (!movie?.preBuyDate) return false;
+
+  return new Date() < new Date(movie.preBuyDate);
+};
 
   return new Date() < new Date(movie.preBuyDate);
 };
