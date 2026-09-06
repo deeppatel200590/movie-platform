@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 
 const MoviePlayer = () => {
   const { id } = useParams();
@@ -9,14 +8,16 @@ const MoviePlayer = () => {
   const [movie, setMovie] = useState(null);
   const [allowed, setAllowed] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [notReleased, setNotReleased] = useState(false);
 
-  // ✅ 1. Fetch movie
+  // 1. Fetch movie
   useEffect(() => {
     const fetchMovie = async () => {
       try {
         const res = await axios.get(
           `${import.meta.env.VITE_API_URL}/api/movies/${id}`
         );
+
         console.log("Movie:", res.data);
         setMovie(res.data);
       } catch (error) {
@@ -27,47 +28,55 @@ const MoviePlayer = () => {
     fetchMovie();
   }, [id]);
 
-  // ✅ 2. Check access
+  // 2. Check access
   useEffect(() => {
     const checkAccess = async () => {
       try {
         const token = localStorage.getItem("token");
 
-        // ❌ No token → no access
+        // No login
         if (!token) {
           setAllowed(false);
           setLoading(false);
           return;
         }
 
-        // ✅ Decode token
-        const decoded = jwtDecode(token);
-        console.log("Decoded Token:", decoded);
+        // Movie not loaded yet
+        if (!movie) {
+          return;
+        }
 
-        // ⚠️ handle different possible field names
-        const userId = decoded.id || decoded._id || decoded.userId;
+        // 🔒 IMPORTANT:
+        // Pre-buyers cannot watch before official release
+        if (
+          movie.releaseDate &&
+          new Date() < new Date(movie.releaseDate)
+        ) {
+          setNotReleased(true);
+          setAllowed(false);
+          setLoading(false);
+          return;
+        }
 
-        // ✅ API call
+        // Check purchase
         const res = await fetch(
           `${import.meta.env.VITE_API_URL}/api/payment/check`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              "Authorization": `Bearer ${token}`, // IMPORTANT
+              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
-              userId: userId,
               movieId: id,
             }),
           }
         );
 
-        // ✅ FIX: define data
         const data = await res.json();
+
         console.log("Payment Check Response:", data);
 
-        // ✅ Set access
         setAllowed(data.allowed === true);
 
       } catch (err) {
@@ -79,9 +88,9 @@ const MoviePlayer = () => {
     };
 
     checkAccess();
-  }, [id]);
+  }, [id, movie]);
 
-  // ⏳ Loading screen
+  // Loading
   if (loading) {
     return (
       <div className="text-white bg-black h-screen flex items-center justify-center">
@@ -90,13 +99,37 @@ const MoviePlayer = () => {
     );
   }
 
-  // ❌ Not allowed
+  // 🔒 Purchased but movie hasn't released
+  if (notReleased) {
+    return (
+      <div className="text-white bg-black h-screen flex flex-col items-center justify-center text-center px-4">
+        <h1 className="text-2xl font-bold">
+          🎬 Movie has not been released yet
+        </h1>
+
+        <p className="mt-3 text-gray-400">
+          You have pre-bought this movie.
+        </p>
+
+        <p className="mt-2 text-gray-400">
+          Official release:
+        </p>
+
+        <p className="mt-1 text-lg font-semibold">
+          {new Date(movie.releaseDate).toLocaleString()}
+        </p>
+      </div>
+    );
+  }
+
+  // Not purchased
   if (!allowed) {
     return (
       <div className="text-white bg-black h-screen flex flex-col items-center justify-center">
         <h1 className="text-2xl font-bold">
           🚫 You must purchase this movie to watch it
         </h1>
+
         <p className="mt-2 text-gray-400">
           Go back and complete payment
         </p>
@@ -104,15 +137,21 @@ const MoviePlayer = () => {
     );
   }
 
-  // ✅ Allowed → play video
+  // Allowed → play video
   return (
     <div className="w-screen h-screen flex items-center justify-center bg-black">
       {movie && movie.movieUrl ? (
-        <video controls autoPlay className="w-full h-full object-contain">
+        <video
+          controls
+          autoPlay
+          className="w-full h-full object-contain"
+        >
           <source src={movie.movieUrl} type="video/mp4" />
         </video>
       ) : (
-        <p className="text-white">Video not available</p>
+        <p className="text-white">
+          Video not available
+        </p>
       )}
     </div>
   );

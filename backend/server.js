@@ -145,8 +145,7 @@ app.get("/test-email", async (req, res) => {
   }
 });
 
-app.post(
-  "/api/movies/upload",
+app.post("/api/movies/upload",
   auth,
   adminOnly,
   upload.single("poster"),
@@ -156,10 +155,44 @@ app.post(
       const posterFile = req.file;
 
       if (!posterFile) {
-        return res.status(400).json({ message: "Poster is required" });
+        return res.status(400).json({
+          message: "Poster is required"
+        });
       }
 
-      // 2. Upload poster to R2
+      // 2. Validate dates
+      if (!req.body.preBuyDate) {
+        return res.status(400).json({
+          message: "Pre-Buy Date is required"
+        });
+      }
+
+      if (!req.body.releaseDate) {
+        return res.status(400).json({
+          message: "Release Date is required"
+        });
+      }
+
+      const preBuyDate = new Date(req.body.preBuyDate);
+      const releaseDate = new Date(req.body.releaseDate);
+
+      if (
+        Number.isNaN(preBuyDate.getTime()) ||
+        Number.isNaN(releaseDate.getTime())
+      ) {
+        return res.status(400).json({
+          message: "Invalid date"
+        });
+      }
+
+      // Pre-Buy must be before official release
+      if (preBuyDate >= releaseDate) {
+        return res.status(400).json({
+          message: "Pre-Buy Date must be before Release Date"
+        });
+      }
+
+      // 3. Upload poster to R2
       const posterKey = `posters/${Date.now()}-${posterFile.originalname}`;
 
       await r2.send(
@@ -171,26 +204,29 @@ app.post(
         })
       );
 
-      const posterUrl = `https://pub-b7ae3ac99fe042c2b66e569f1ba04c88.r2.dev/${posterKey}`;
+      const posterUrl =
+        `https://pub-b7ae3ac99fe042c2b66e569f1ba04c88.r2.dev/${posterKey}`;
 
-      // 3. Create movie in DB (movie file already uploaded via presigned URL)
+      // 4. Create movie in DB
+      // Movie file was already uploaded using presigned URL
       const newMovie = new Movie({
         title: req.body.title,
         category: req.body.category,
         description: req.body.description,
         hero: req.body.hero,
         producer: req.body.producer,
-        price: Number(req.body.price),
-        releaseDate: new Date(req.body.releaseDate),
 
-        status:
-          new Date(req.body.releaseDate) <= new Date()
-            ? "released"
-            : "coming",
+        // NEW
+        preBuyDate: preBuyDate,
+
+        // Official release date
+        releaseDate: releaseDate,
+
+        price: Number(req.body.price),
 
         poster: posterUrl,
 
-        // ✅ IMPORTANT: comes from frontend (R2 direct upload)
+        // Movie file URL from R2
         movieUrl: req.body.movieUrl,
       });
 
@@ -200,9 +236,13 @@ app.post(
         message: "Upload successful",
         movie: newMovie,
       });
+
     } catch (error) {
       console.log("UPLOAD ERROR:", error);
-      res.status(500).json({ message: error.message });
+
+      res.status(500).json({
+        message: error.message
+      });
     }
   }
 );
@@ -349,12 +389,45 @@ app.post("/api/payment/check", auth, async (req, res) => {
     const userId = req.user.id;
     const { movieId } = req.body;
 
-    const purchase = await Purchase.findOne({ userId, movieId });
+    // Find movie
+    const movie = await Movie.findById(movieId);
 
-    res.json({ allowed: !!purchase });
+    if (!movie) {
+      return res.status(404).json({
+        allowed: false,
+        message: "Movie not found",
+      });
+    }
 
-  } catch {
-    res.status(500).json({ allowed: false });
+    // 🔒 Do not allow anyone to watch before official release
+    if (
+      movie.releaseDate &&
+      new Date() < new Date(movie.releaseDate)
+    ) {
+      return res.json({
+        allowed: false,
+        notReleased: true,
+        releaseDate: movie.releaseDate,
+      });
+    }
+
+    // Check whether this user purchased the movie
+    const purchase = await Purchase.findOne({
+      userId,
+      movieId,
+    });
+
+    return res.json({
+      allowed: !!purchase,
+    });
+
+  } catch (error) {
+    console.error("PAYMENT CHECK ERROR:", error);
+
+    res.status(500).json({
+      allowed: false,
+      message: "Error checking access",
+    });
   }
 });
 
@@ -458,11 +531,23 @@ app.post("/api/payment/verify", auth, async (req, res) => {
 app.post("/api/payment/order", auth, async (req, res) => {
   try {
     const { movieId } = req.body;
+
     const movie = await Movie.findById(movieId);
     const user = await User.findById(req.user.id);
 
     if (!movie || !user) {
-      return res.status(404).json({ message: "Not found" });
+      return res.status(404).json({
+        message: "Movie or user not found"
+      });
+    }
+
+    const now = new Date();
+
+    // Pre-Buy has not started yet
+    if (movie.preBuyDate && now < movie.preBuyDate) {
+      return res.status(400).json({
+        message: "Pre-Buy has not started yet"
+      });
     }
 
     const orderId = uuidv4();
@@ -471,24 +556,25 @@ app.post("/api/payment/order", auth, async (req, res) => {
       order_id: orderId,
       order_amount: movie.price.toFixed(2).toString(),
       order_currency: "INR",
+
       customer_details: {
         customer_id: user._id.toString(),
         customer_email: user.email,
-        customer_phone: user.phone || "9999999999", 
+        customer_phone: user.phone || "9999999999",
       },
+
       order_meta: {
-        // 1. ENSURE THIS IS YOUR LIVE DOMAIN
         return_url: `https://www.murlidharmotionpictures.in/payment-verify?order_id={order_id}&movie_id=${movieId}`
       }
     };
 
     const response = await axios.post(
-      "https://api.cashfree.com/pg/orders", // 2. CHANGE THIS TO 'api' (Live)
+      "https://api.cashfree.com/pg/orders",
       request,
       {
         headers: {
-          "x-client-id": process.env.CASHFREE_APP_ID,     // Ensure .env has LIVE ID
-          "x-client-secret": process.env.CASHFREE_SECRET_KEY, // Ensure .env has LIVE Secret
+          "x-client-id": process.env.CASHFREE_APP_ID,
+          "x-client-secret": process.env.CASHFREE_SECRET_KEY,
           "x-api-version": "2022-09-01",
           "Content-Type": "application/json",
         },
@@ -501,8 +587,14 @@ app.post("/api/payment/order", auth, async (req, res) => {
     });
 
   } catch (err) {
-    console.error("CASHFREE ORDER ERROR:", err.response?.data || err.message);
-    res.status(500).json({ message: "Order failed" });
+    console.error(
+      "CASHFREE ORDER ERROR:",
+      err.response?.data || err.message
+    );
+
+    res.status(500).json({
+      message: "Order failed"
+    });
   }
 });
 

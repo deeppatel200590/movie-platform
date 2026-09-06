@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 
 const movieSchema = new mongoose.Schema({
+
   title: {
     type: String,
     required: true
@@ -12,13 +13,24 @@ const movieSchema = new mongoose.Schema({
   },
 
   description: String,
+
   hero: String,
+
   producer: String,
 
   poster: String,
+
   movieUrl: String,
 
-  releaseDate: Date,
+  // When users can start pre-buying
+  preBuyDate: {
+    type: Date
+  },
+
+  // Official movie release date
+  releaseDate: {
+    type: Date
+  },
 
   price: {
     type: Number,
@@ -30,6 +42,7 @@ const movieSchema = new mongoose.Schema({
     type: Number,
     default: 0
   }
+
 });
 
 const Movie = mongoose.model("Movie", movieSchema);

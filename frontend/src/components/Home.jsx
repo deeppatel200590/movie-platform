@@ -44,24 +44,26 @@ const Home = () => {
   const normalize = (str) =>
     str?.toLowerCase().replace(/[\s-]/g, "");
 
-  const isUpcomingMovie = (movie) => {
-    if (!movie) return false;
+const isBeforePreBuy = (movie) => {
+  if (!movie?.preBuyDate) return true;
 
-    const releaseDate = movie.releaseDate || movie.release_date;
-    if (!releaseDate) return false;
+  return new Date() < new Date(movie.preBuyDate);
+};
 
-    const releaseTime = new Date(releaseDate).getTime();
-    if (isNaN(releaseTime)) return false;
+const isBeforeRelease = (movie) => {
+  if (!movie?.releaseDate) return false;
 
-    return movie.status === "coming" || releaseTime > Date.now();
-  };
+  return new Date() < new Date(movie.releaseDate);
+};
 
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/api/movies`)
       .then((res) => res.json())
       .then((data) => {
         setMovies(data);
-        setUpcomingMovies(data.filter(isUpcomingMovie));
+        setUpcomingMovies(
+          data.filter((movie) => isBeforeRelease(movie))
+        );
       })
       .catch(console.error);
   }, []);
@@ -193,25 +195,44 @@ const Home = () => {
           </p>
 
           <div className="mt-3">
-            {isUpcoming ? (
-              <button className="w-full py-2 bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 text-sm">
-                <Clock size={16} /> Coming Soon
-              </button>
-            ) : isPurchased ? (
-              <button
-                onClick={() => navigate(`/movie/${movie._id}`)}
-                className="w-full py-2 bg-blue-600 text-white rounded-lg flex items-center justify-center gap-2 text-sm"
-              >
-                <Play size={16} /> Watch
-              </button>
-            ) : (
-              <button
-                onClick={() => handleBuy(movie)}
-                className="w-full py-2 bg-white text-black rounded-lg flex items-center justify-center gap-2 text-sm font-bold"
-              >
-                <ShoppingCart size={16} /> Buy
-              </button>
-            )}
+{isBeforePreBuy(movie) ? (
+  <button
+    disabled
+    className="w-full py-2 bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 text-sm"
+  >
+    <Clock size={16} /> Coming Soon
+  </button>
+) : isBeforeRelease(movie) ? (
+  isPurchased ? (
+    <button
+      disabled
+      className="w-full py-2 bg-gray-700 text-white rounded-lg flex items-center justify-center gap-2 text-sm"
+    >
+      <Clock size={16} /> Pre-Bought
+    </button>
+  ) : (
+    <button
+      onClick={() => handleBuy(movie)}
+      className="w-full py-2 bg-yellow-500 text-black rounded-lg flex items-center justify-center gap-2 text-sm font-bold"
+    >
+      <ShoppingCart size={16} /> Pre-Buy
+    </button>
+  )
+) : isPurchased ? (
+  <button
+    onClick={() => navigate(`/movie/${movie._id}`)}
+    className="w-full py-2 bg-blue-600 text-white rounded-lg flex items-center justify-center gap-2 text-sm"
+  >
+    <Play size={16} /> Watch
+  </button>
+) : (
+  <button
+    onClick={() => handleBuy(movie)}
+    className="w-full py-2 bg-white text-black rounded-lg flex items-center justify-center gap-2 text-sm font-bold"
+  >
+    <ShoppingCart size={16} /> Buy
+  </button>
+)}
           </div>
         </div>
       </div>
