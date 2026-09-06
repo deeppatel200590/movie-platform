@@ -152,7 +152,6 @@ const isBeforeRelease = (movie) => {
   });
 
   const MovieCard = ({ movie }) => {
-    const isUpcoming = isUpcomingMovie(movie);
     const isPurchased = purchasedMovies.includes(movie._id);
 
     return (
