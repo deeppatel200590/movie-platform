@@ -78,7 +78,7 @@ I used RESTful API design and centralized auth middleware for consistency across
 - Managing full-stack application flow
 
 ## Live Demo
-https://varenyafilms.com
+https://murlidharmotionpictures.in/
 
 ## Author
 Deep
